@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Mail, Phone, MoreHorizontal, Play, Star, Facebook, Twitter, Linkedin, CheckCircle, Bot, MessageSquare } from 'lucide-react';
+import { Mail, Phone, MoreHorizontal, Star, Bot, MessageSquare } from 'lucide-react';
 import '../styles/profile.css';
 
 export default function ProfilePage() {
@@ -26,27 +26,11 @@ export default function ProfilePage() {
   return (
     <div className="profile-wrapper">
       
-      {/* EnerSense Topbar */}
-      <nav className="adv-nav" style={{ padding: '16px 32px' }}>
-        <div className="adv-nav-left" style={{ gap: '16px' }}>
-          <button onClick={() => navigate('/dashboard')} style={{ background: 'transparent', border: '1px solid #333', borderRadius: '12px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = '#2a2a2a'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-            <ArrowLeft size={18} />
-          </button>
-          <div className="adv-logo" onClick={() => navigate('/dashboard')} style={{ fontSize: '20px', letterSpacing: '-0.5px', color: '#888' }}>
-            ener<strong style={{ color: '#fff' }}>sense</strong>
-          </div>
-        </div>
-        <div className="adv-nav-right">
-          {/* Empty right side to keep it clean */}
-        </div>
-      </nav>
-
       {/* Header Section (White in ref, #1e1e1e in dark) */}
       <header className="adv-header-section">
         {/* Cover Banner */}
         <div className="adv-cover-banner">
-           {/* Using the dunes artifact as a mountain-like cover */}
-           <img src="/purple_dunes_hero_1785467066074.jpg" alt="Cover" className="adv-cover-img" />
+           <img src="/assets/profile_bg.avif" alt="Cover" className="adv-cover-img" />
         </div>
 
         {/* Profile Info Row */}
@@ -64,12 +48,6 @@ export default function ProfilePage() {
                <button className="adv-more-btn"><MoreHorizontal size={18} /></button>
              </div>
              <p className="adv-title">EnerSense User · Smart Home Enthusiast</p>
-             
-             <div className="adv-social-row">
-                <span className="adv-social-item"><MapPin size={12} /> {profileData.address}</span>
-                <span className="adv-social-item"><CheckCircle size={12} color="#4db6ac" /> Active Member</span>
-                <span className="adv-social-item">⚡ Premium Plan</span>
-             </div>
           </div>
         </div>
       </header>

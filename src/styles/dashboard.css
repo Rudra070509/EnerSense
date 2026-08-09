@@ -225,7 +225,7 @@ body {
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: none;
   border-radius: 32px;
   padding: 32px;
   display: flex;
@@ -240,31 +240,21 @@ body {
   transform: translateY(-8px) scale(1.02);
   box-shadow: 0 24px 50px rgba(0, 0, 0, 0.3);
   background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-.wrapped-glass-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-  opacity: 0.5;
 }
 
 /* Solid Variants */
 .solid-black-card {
   background: #09090b; /* Very dark zinc */
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: none;
   color: #ffffff;
 }
 .solid-black-card:hover {
   background: #18181b;
-  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .solid-white-card {
   background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: none;
   color: #000000;
 }
 .solid-white-card:hover {
@@ -277,7 +267,7 @@ body {
 
 .solid-orange-card {
   background: #f97316; /* Vibrant orange */
-  border: 1px solid #ea580c;
+  border: none;
   color: #000000;
 }
 .solid-orange-card:hover {
@@ -377,7 +367,7 @@ body {
 
 .solid-magenta-card {
   background: #f472b6; /* Softer light pink */
-  border: 1px solid #db2777;
+  border: none;
   color: #000000;
 }
 .solid-magenta-card:hover {
@@ -389,7 +379,7 @@ body {
 
 .solid-lime-card {
   background: #ccff00; /* Neon Lime / Chartreuse */
-  border: 1px solid #a3cc00;
+  border: none;
   color: #000000;
 }
 .solid-lime-card:hover {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, X } from 'lucide-react';
+import { X } from 'lucide-react';
 
 export default function LandingPage() {
   const [activeSection, setActiveSection] = useState('home');

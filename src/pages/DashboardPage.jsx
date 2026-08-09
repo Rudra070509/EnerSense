@@ -6,16 +6,12 @@ import {
   LineChart as LineChartIcon, 
   Sparkles, 
   FileText, 
-  Menu,
-  Earth,
   Send,
   Loader2,
   Trash2
 } from 'lucide-react';
-import { ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, LabelList } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, XAxis, Tooltip, LabelList } from 'recharts';
 import '../styles/dashboard.css';
-import StatCard from '../components/Dashboard/StatCard';
-import TopApplianceCard from '../components/Dashboard/TopApplianceCard';
 import GlassCard from '../components/Dashboard/GlassCard';
 import GlassSurface from '../components/GlassSurface/GlassSurface';
 import { getGeminiResponse } from '../utils/gemini';
