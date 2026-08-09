@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Phone, MoreHorizontal, Star, Bot, MessageSquare } from 'lucide-react';
+import { Mail, Phone, Star, Bot, MessageSquare } from 'lucide-react';
 import '../styles/profile.css';
 
 /**
@@ -57,7 +57,6 @@ export default function ProfilePage() {
           <div className="adv-info-box">
              <div className="adv-name-row">
                <h1>{displayName}</h1>
-               <button className="adv-more-btn"><MoreHorizontal size={18} /></button>
              </div>
              <p className="adv-title">EnerSense User · Smart Home Enthusiast</p>
           </div>
