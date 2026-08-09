@@ -1,0 +1,1049 @@
+/* Custom Fonts */
+@font-face {
+  font-family: 'LemonMilk';
+  src: url('/fonts/lemonbold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ✦ Global Button Pop Animation */
+button,
+.back-link,
+.sign-in-btn,
+.learn-more-btn,
+.submit-btn,
+.social-btn,
+.nav-link {
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+              box-shadow 0.3s ease,
+              background 0.3s ease,
+              border-color 0.3s ease !important;
+}
+
+button:hover,
+.back-link:hover,
+.sign-in-btn:hover,
+.learn-more-btn:hover,
+.submit-btn:hover,
+.social-btn:hover {
+  transform: scale(1.08) translateY(-4px) !important;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Core Reset & Fonts */
+html {
+  scroll-behavior: smooth;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:root {
+  /* ✦ Light Frosted-Glass Glassmorphism Tokens (matching reference image) */
+
+  /* Card surface: highly transparent */
+  --glass-card-bg: rgba(255, 255, 255, 0.08);
+  --glass-card-border: rgba(255, 255, 255, 0.18);
+  --glass-card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
+
+  --glass-input-bg: rgba(0, 0, 0, 0.4);
+  --glass-input-bg-hover: rgba(0, 0, 0, 0.5);
+  --glass-input-bg-focus: rgba(0, 0, 0, 0.6);
+  --glass-input-border: rgba(255, 255, 255, 0.18);
+  --glass-input-border-focus: rgba(255, 255, 255, 0.35);
+
+  /* Text: dark on light glass */
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.80);
+  --text-muted: rgba(255, 255, 255, 0.55);
+
+  --radius-xl: 28px;
+  --radius-lg: 20px;
+  --radius-md: 12px;
+  --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-heading: 'Outfit', sans-serif;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: #080612;
+  color: var(--text-primary);
+  min-height: 100vh;
+  width: 100vw;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Full Screen Background Image */
+.fullscreen-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background-color: transparent;
+}
+
+.fullscreen-bg-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.75) contrast(1.05);
+}
+
+/* App Layout Wrapper */
+.app-container {
+  position: relative;
+  z-index: 10;
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 24px 32px;
+}
+
+@media (max-width: 600px) {
+  .app-container {
+    padding: 16px;
+  }
+}
+
+/* Full Width Navbar Header */
+.top-navbar {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.brand-logo {
+  display: flex;
+  align-items: center;
+}
+
+.brand-logo-img {
+  height: 40px; /* Keep layout height small so it doesn't push other elements down */
+  width: auto;
+  filter: invert(1);
+  mix-blend-mode: screen;
+  opacity: 0.95;
+  transform: scale(4.5); /* Visually enlarge the logo without breaking the layout */
+  transform-origin: left center; /* Scale it outwards to the right so it stays aligned left */
+  margin-left: 20px; 
+}
+
+/* Glassmorphism Navigation Button */
+.back-link {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  padding: 10px 22px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.back-link:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Main Content Wrapper */
+.main-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 0;
+}
+
+/* ✦ Frosted orbs for light-glass backgrounds */
+.glow-orb {
+  position: absolute;
+  width: 420px;
+  height: 420px;
+  background: radial-gradient(circle, rgba(200, 210, 230, 0.6) 0%, rgba(220, 225, 240, 0.3) 50%, transparent 75%);
+  border-radius: 50%;
+  filter: blur(60px);
+  z-index: 0;
+  pointer-events: none;
+  animation: pulseGlow 10s ease-in-out infinite alternate;
+}
+
+@keyframes pulseGlow {
+  0%   { transform: scale(1)    translate(0px, 0px);    opacity: 0.8; }
+  100% { transform: scale(1.08) translate(16px, -16px); opacity: 1;   }
+}
+
+/* ✦ iOS-style Glassmorphism Card */
+.auth-glass-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 460px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
+  padding: 44px;
+  color: #ffffff;
+  animation: cardFadeIn 0.5s ease-out;
+}
+
+@media (max-width: 480px) {
+  .auth-glass-card {
+    padding: 28px 22px;
+    border-radius: 26px;
+  }
+}
+
+@keyframes cardFadeIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.form-header {
+  margin-bottom: 28px;
+}
+
+.form-title {
+  font-family: var(--font-heading);
+  font-size: 34px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
+  margin-bottom: 8px;
+}
+
+@media (max-width: 480px) {
+  .form-title {
+    font-size: 28px;
+  }
+}
+
+.form-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.mode-toggle-btn {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+  font-family: inherit;
+  font-size: 14px;
+  padding: 0;
+  transition: opacity 0.2s ease;
+}
+
+.mode-toggle-btn:hover {
+  opacity: 0.7;
+}
+
+/* Form Grid & Inputs */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.name-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 480px) {
+  .name-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}
+
+.input-group {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* 🔥 Glassmorphism Input Field */
+.custom-input {
+  width: 100%;
+  height: 52px;
+  background-color: var(--glass-input-bg);
+  /* Slight blur for inputs over the card blur */
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid var(--glass-input-border);
+  border-radius: var(--radius-md);
+  padding: 0 18px;
+  font-size: 16px;
+  font-family: var(--font-main);
+  color: var(--text-primary);
+  outline: none;
+  transition: all 0.25s ease;
+}
+
+.custom-input::placeholder {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.custom-input:hover {
+  background-color: var(--glass-input-bg-hover);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.custom-input:focus {
+  border-color: var(--glass-input-border-focus);
+  background-color: var(--glass-input-bg-focus);
+}
+
+.password-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.password-toggle-icon {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  transition: color 0.2s ease;
+}
+
+.password-toggle-icon:hover {
+  color: var(--text-primary);
+}
+
+/* Checkbox Row */
+.form-options-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 2px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.checkbox-container input[type="checkbox"] {
+  display: none;
+}
+
+/* 🔥 Glassmorphism Checkbox */
+.custom-checkbox {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background-color: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.checkbox-container input[type="checkbox"]:checked + .custom-checkbox {
+  background-color: rgba(255, 255, 255, 0.8);
+  border-color: rgba(255, 255, 255, 0.8);
+}
+
+.checkbox-container input[type="checkbox"]:checked + .custom-checkbox svg {
+  stroke: #000;
+}
+
+.terms-link {
+  color: var(--text-primary);
+  text-decoration: underline;
+}
+
+.forgot-link {
+  font-size: 13px;
+  color: var(--text-primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.forgot-link:hover {
+  text-decoration: underline;
+}
+
+/* ✦ Frosted-Glass Submit Button — transparent */
+.submit-btn {
+  width: 100%;
+  height: 52px;
+  margin-top: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 100px;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: var(--font-main);
+  cursor: pointer;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.submit-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.submit-btn:active {
+  transform: scale(0.95) !important;
+}
+
+/* Divider */
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 22px 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.divider span {
+  padding: 0 14px;
+}
+
+/* ✦ Frosted-Glass Social Button — transparent */
+.social-btn {
+  height: 50px;
+  background-color: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 100px;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: var(--font-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  cursor: pointer;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
+}
+
+.social-btn:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+.social-btn:active {
+  transform: scale(0.95) !important;
+}
+
+/* Footer Tagline Ticker */
+.footer-tagline {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-secondary);
+  letter-spacing: 0.5px;
+  padding: 8px 0;
+}
+
+/* 🔥 Glassmorphism Toast Component */
+.toast-notification {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  left: 24px;
+  max-width: 400px;
+  margin-left: auto;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  padding: 14px 20px;
+  border-radius: 100px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  z-index: 1000;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid rgba(0, 0, 0, 0.2);
+  border-top-color: #000;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ========================================================= */
+/* 🔥 Landing Page Styles */
+/* ========================================================= */
+
+.landing-container {
+  position: relative;
+  z-index: 10;
+  min-height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+}
+
+.fullscreen-bg-overlay,
+.landing-bg-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(circle at 50% 50%, rgba(124, 58, 237, 0.15) 0%, transparent 60%),
+    linear-gradient(180deg, rgba(8, 6, 18, 0.1) 0%, rgba(8, 6, 18, 0.7) 100%);
+  pointer-events: none;
+}
+
+/* Landing Navbar */
+.landing-navbar {
+  width: 100%;
+  padding: 24px 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100; /* Ensure navbar is above all sections for clickability */
+}
+
+@media (max-width: 900px) {
+  .landing-navbar {
+    padding: 24px;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .landing-nav-links {
+    position: static;
+    transform: none;
+    gap: 20px;
+  }
+}
+
+.landing-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(calc(-50% + 15px)); /* Shift slightly to the right for optical balance */
+}
+
+.nav-link {
+  font-family: var(--font-main);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-decoration: none;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 50px;
+  padding: 10px 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.nav-link:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.nav-link.active {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.45);
+  transform: scale(1.12);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+  font-weight: 800;
+}
+
+.landing-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border-radius: 50%;
+  transition: background 0.2s ease;
+}
+
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.sign-in-btn {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  padding: 10px 32px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  letter-spacing: 1px;
+  transition: all 0.3s ease;
+}
+
+.sign-in-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Landing Hero Section */
+.landing-hero {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0 24px;
+  margin-top: 160px; /* Pushed a little more down */
+  transform: translateX(20px); /* Nudged a very little to the right */
+}
+
+.hero-title {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 130px;
+  font-weight: 400;
+  letter-spacing: -1px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+
+  /* Gradient text fill */
+  background: linear-gradient(
+    135deg,
+    #ffffff 0%,
+    #e0eaff 40%,
+    #a5b8ff 70%,
+    #ffffff 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+
+  /* Multi-layer glow */
+  filter:
+    drop-shadow(0 0 20px rgba(180, 200, 255, 0.6))
+    drop-shadow(0 0 60px rgba(140, 160, 255, 0.3))
+    drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+}
+
+@media (max-width: 900px) {
+  .hero-title {
+    font-size: 40px;
+    letter-spacing: 4px;
+  }
+}
+
+.hero-description {
+  font-size: 16px;
+  color: var(--text-secondary);
+  max-width: 600px;
+  line-height: 1.6;
+  margin-bottom: 48px;
+  font-weight: 400;
+}
+
+.learn-more-btn {
+  background: rgba(255, 255, 255, 0.95);
+  border: none;
+  color: #000000;
+  padding: 14px 40px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 24px rgba(255, 255, 255, 0.2);
+}
+
+.learn-more-btn:hover {
+  transform: translateY(-2px) scale(1.06) !important;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Landing Page Sections (Home, About, Contact) */
+.landing-section {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+  padding: 80px 24px;
+}
+
+.hero-section {
+  padding-top: 0;
+  min-height: 65vh; /* Reduced further to ensure the next section is visible above the fold */
+}
+
+.section-content {
+  max-width: 1200px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.section-title {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 48px;
+  color: #ffffff;
+  letter-spacing: 2px;
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.section-subtitle {
+  font-size: 16px;
+  color: var(--text-secondary);
+  margin-bottom: 64px;
+  font-weight: 500;
+  max-width: 600px;
+}
+
+/* Reusable Glass Panel (matches login card style) */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
+  color: #ffffff;
+  padding: 40px;
+}
+
+/* Matte Section (Solid background overlaying the image, blended at the top) */
+.matte-section {
+  background: linear-gradient(180deg, transparent 0%, rgba(10, 10, 10, 0.6) 15%, #0a0a0a 35%, #0a0a0a 100%);
+  border-top: none;
+}
+
+
+/* -------------------------------------
+   3D Matte Black Learn More Modal
+------------------------------------- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease forwards;
+  padding: 20px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.matte-3d-modal {
+  position: relative;
+  width: 100%;
+  max-width: 900px;
+  background: #111111; /* Matte black */
+  border-radius: 20px;
+  /* 3D Effect: Subtle top highlight, strong bottom shadow, and massive drop shadow */
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 0.1), 
+    inset 0 -6px 0 rgba(0, 0, 0, 0.6),
+    0 30px 60px rgba(0, 0, 0, 0.8),
+    0 10px 20px rgba(0, 0, 0, 0.6);
+  border: 1px solid #2a2a2a;
+  animation: popupIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  overflow: hidden;
+}
+
+@keyframes popupIn {
+  from { opacity: 0; transform: scale(0.9) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.close-modal-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s ease;
+}
+
+.close-modal-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: scale(1.1);
+}
+
+.modal-content-scroll {
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 48px;
+  text-align: left;
+  color: #e0e0e0;
+}
+
+/* Custom scrollbar for modal */
+.modal-content-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.modal-content-scroll::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.2);
+  border-radius: 4px;
+}
+.modal-content-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.2);
+  border-radius: 4px;
+}
+
+.modal-title {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 28px;
+  color: #ffffff;
+  margin-top: 40px;
+  margin-bottom: 20px;
+  letter-spacing: 1px;
+}
+
+.modal-title:first-of-type {
+  margin-top: 0;
+}
+
+.modal-text {
+  font-size: 16px;
+  line-height: 1.7;
+  color: #b0b0b0;
+  margin-bottom: 24px;
+}
+
+.modal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+.modal-list-item {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 20px;
+  border-radius: 12px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #cccccc;
+}
+
+.modal-list-item strong {
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-size: 16px;
+  margin-right: 8px;
+}
+
+.modal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.modal-grid-item {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 24px;
+  border-radius: 12px;
+}
+
+.modal-grid-item h4 {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  color: #ffffff;
+  margin-bottom: 12px;
+}
+
+.modal-grid-item p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #b0b0b0;
+}
+
+/* Team Grid */
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 32px;
+  width: 100%;
+}
+
+.team-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.team-card:hover {
+  transform: translateY(-8px);
+}
+
+.team-avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  margin-bottom: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.team-name {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  font-family: var(--font-heading);
+}
+
+.team-roll, .team-role {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+/* Contact Card */
+.contact-card {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  gap: 40px;
+  width: 100%;
+  max-width: 800px;
+}
+
+.contact-info h4 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  font-family: var(--font-heading);
+}
+
+.contact-info p {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
