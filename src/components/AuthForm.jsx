@@ -3,19 +3,38 @@ import PasswordInput from './PasswordInput';
 import SocialButtons from './SocialButtons';
 import { Check } from 'lucide-react';
 
+/**
+ * AuthForm Component
+ * 
+ * Handles both user login and registration. It toggles between "signup" 
+ * and "login" modes, dynamically changing the displayed fields.
+ * 
+ * @param {function} onSuccess - Callback triggered when auth succeeds.
+ */
 export default function AuthForm({ onSuccess }) {
-  const [mode, setMode] = useState('signup'); // 'signup' | 'login'
+  // Toggles between 'signup' (create account) and 'login' (welcome back)
+  const [mode, setMode] = useState('signup'); 
+  
+  // Form input states
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  
+  // Checkbox states
   const [agreeTerms, setAgreeTerms] = useState(true);
   const [rememberMe, setRememberMe] = useState(false);
+  
+  // UI states for loading spinner and error messages
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  /**
+   * Called when the user clicks "Create account" or "Log in".
+   * Simulates a network request delay, then processes the action.
+   */
   const handleSubmit = (e) => {
-    e.preventDefault();
+    e.preventDefault(); // Prevent page refresh on form submit
     setLoading(true);
     setError('');
 
@@ -23,21 +42,29 @@ export default function AuthForm({ onSuccess }) {
       setLoading(false);
 
       if (mode === 'signup') {
-        // Store name + email so the profile page can show it (no password saving for now)
+        // Mock Registration: Store name + email in local storage.
+        // We DO NOT save the password here for security reasons, 
+        // proper auth will be implemented when connected to a real database.
         localStorage.setItem('enersense_user', JSON.stringify({ firstName, lastName, email }));
 
-        // Switch to login mode
+        // Switch automatically to login mode after successful signup
         setMode('login');
         setPassword('');
+        
+        // Notify the parent component (AuthPage) to show a success toast, but don't redirect yet
         onSuccess('Account created successfully! Please log in to continue.', false);
         return;
       }
 
-      // LOGIN — just let them through for now (credential checking will come with the database)
+      // Mock Login: In this phase, we just let the user through.
+      // Credential validation against a database will be added later.
       onSuccess('Welcome back! You have logged in successfully.', true);
-    }, 1200);
+    }, 1200); // 1.2s delay to simulate network latency
   };
 
+  /**
+   * Helper function to flip the form mode between login and signup
+   */
   const toggleMode = () => {
     setMode(mode === 'signup' ? 'login' : 'signup');
   };

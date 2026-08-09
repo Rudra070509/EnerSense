@@ -1,8 +1,18 @@
 import React from 'react';
 
+/**
+ * SocialButtons Component
+ * 
+ * Renders the "Continue with Google" OAuth button.
+ * Currently simulates the flow by redirecting to Google's actual sign-in page.
+ */
 export default function SocialButtons({ mode }) {
   const isSignUp = mode === 'signup';
 
+  /**
+   * Redirects the user to the Google Account login page to simulate OAuth.
+   * In production, this would use Firebase Auth or next-auth.
+   */
   const handleGoogleLogin = () => {
     // Open official Google Account Sign-In / Authenticator page
     window.location.href = 'https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Fmyaccount.google.com%2F&flowName=GlifWebSignIn&flowEntry=ServiceLogin';

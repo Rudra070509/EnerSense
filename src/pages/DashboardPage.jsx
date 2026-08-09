@@ -16,6 +16,14 @@ import GlassCard from '../components/Dashboard/GlassCard';
 import GlassSurface from '../components/GlassSurface/GlassSurface';
 import { getGeminiResponse } from '../utils/gemini';
 
+/**
+ * DashboardPage Component
+ * 
+ * This is the primary application interface where users view their energy 
+ * consumption data, estimated bills, top appliances, and interact with the AI assistant.
+ * It uses a Bento-box style grid layout made up of customized GlassCards.
+ */
+
 const mockUsageData = [
   { name: 'Mon', value: 400, saved: 120 },
   { name: 'Tue', value: 300, saved: 150 },
@@ -38,38 +46,63 @@ const categoryData = [
 
 export default function DashboardPage() {
   const navigate = useNavigate();
+  
+  // Controls the currently active tab in the top navigation bar (e.g., 'dashboard', 'appliances')
   const [activeTab, setActiveTab] = useState('dashboard');
+  
+  // State for the AI Chat Assistant. Pre-populated with a greeting message.
   const [chatMessages, setChatMessages] = useState([{ role: 'ai', text: "Hello! I'm EnerSense AI. Ask me about your energy consumption, appliances, or how to save on your bill!" }]);
+  
+  // Holds the text currently typed into the chat input field
   const [chatInput, setChatInput] = useState('');
+  
+  // Boolean to show a loading spinner while waiting for the Gemini API response
   const [isAiLoading, setIsAiLoading] = useState(false);
+  
+  // Reference to the bottom of the chat list, used to auto-scroll when new messages arrive
   const chatEndRef = useRef(null);
 
   // Read user data for the avatar initial
   const savedUser = JSON.parse(localStorage.getItem('enersense_user') || '{}');
   const userInitial = (savedUser.firstName || savedUser.email || 'U')[0].toUpperCase();
 
+  // Scroll to the bottom of the chat window whenever a new message is added
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
 
+  /**
+   * Handles sending a message to the AI assistant.
+   * Updates UI immediately with user message, triggers API call, 
+   * and appends AI response when finished.
+   */
   const handleSendChat = async () => {
-    if (!chatInput.trim() || isAiLoading) return;
+    if (!chatInput.trim() || isAiLoading) return; // Don't send empty messages or if already loading
+    
     const userMsg = chatInput.trim();
-    setChatInput('');
-    setChatMessages(prev => [...prev, { role: 'user', text: userMsg }]);
+    setChatInput(''); // Clear input field
+    setChatMessages(prev => [...prev, { role: 'user', text: userMsg }]); // Add user message to UI
     setIsAiLoading(true);
 
+    // Provide the AI with context about the current dashboard values
+    // (In the future, this will be real dynamic data from the database/MQTT)
     const currentDashboardData = {
       totalPowerToday: '14.2',
       estMonthlyBill: '3,450',
       topAppliances: 'AC Unit (66%), Fridge (24%), Washer (10%)'
     };
 
+    // Fetch response from Gemini AI
     const aiResponse = await getGeminiResponse(userMsg, currentDashboardData);
+    
+    // Add AI response to UI
     setChatMessages(prev => [...prev, { role: 'ai', text: aiResponse }]);
     setIsAiLoading(false);
   };
 
+  /**
+   * Clears the chat history back to just the initial greeting
+   */
   const handleClearChat = () => {
     setChatMessages([{ role: 'ai', text: "Hello! I'm EnerSense AI. Ask me about your energy consumption, appliances, or how to save on your bill!" }]);
   };

@@ -3,11 +3,21 @@ import { useNavigate } from 'react-router-dom';
 import { Mail, Phone, MoreHorizontal, Star, Bot, MessageSquare } from 'lucide-react';
 import '../styles/profile.css';
 
+/**
+ * ProfilePage Component
+ * 
+ * Displays the user's profile information, contact details, and shortcuts 
+ * to their AI assistant and connected devices.
+ */
 export default function ProfilePage() {
   const navigate = useNavigate();
 
+  // Retrieve the saved user details from localStorage. 
+  // If no user is logged in, it defaults to an empty object.
   const savedUser = JSON.parse(localStorage.getItem('enersense_user') || '{}');
 
+  // Hardcoded profile data mixed with actual data from localStorage
+  // In a real app, this would be fetched entirely from a database API.
   const [profileData] = useState({
     firstName: savedUser.firstName || '',
     lastName: savedUser.lastName || '',
@@ -17,10 +27,12 @@ export default function ProfilePage() {
     address: 'Saint-Petersburg, Russia',
   });
 
+  // Calculate the full display name or fall back to a default
   const displayName = profileData.firstName && profileData.lastName 
     ? `${profileData.firstName} ${profileData.lastName}` 
     : profileData.firstName || profileData.email || 'Kevin Smith';
 
+  // Extract the first letter of the user's name/email to show as an avatar placeholder
   const avatarLetter = (profileData.firstName || profileData.email || 'K')[0].toUpperCase();
 
   return (

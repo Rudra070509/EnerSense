@@ -1,5 +1,13 @@
 import { GoogleGenAI } from '@google/genai';
 
+/**
+ * Gemini AI Helper Utility
+ * 
+ * This file handles the communication with the Google Gemini API. 
+ * It wraps the user's prompt with real-time context data (like power usage) 
+ * so the AI can provide personalized, accurate responses.
+ */
+
 // Initialize the Gemini client
 // In a real production app, this should be handled securely on a backend server.
 const ai = new GoogleGenAI({

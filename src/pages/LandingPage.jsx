@@ -1,21 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { X } from 'lucide-react';
+import { X } from 'lucide-react'; // Icon used for the close button in the modal
 
+/**
+ * LandingPage Component
+ * 
+ * This is the public-facing marketing page. It features a hero section, 
+ * an "About Us" section for the team, and a "Support" section. 
+ * It also includes a scroll-spy effect to highlight the current section 
+ * in the navbar, and a 3D glassmorphic modal to explain the project.
+ */
 export default function LandingPage() {
+  // Tracks which section (home, about, contact) is currently visible on screen
   const [activeSection, setActiveSection] = useState('home');
+  
+  // Controls whether the "Learn More" pop-up modal is visible
   const [isLearnMoreModalOpen, setIsLearnMoreModalOpen] = useState(false);
 
+  // Set up a scroll listener to update the active navbar link as the user scrolls
   useEffect(() => {
     const handleScroll = () => {
       const sections = ['home', 'about', 'contact'];
       let currentSection = 'home';
 
+      // Check the position of each section on the page
       for (const section of sections) {
         const element = document.getElementById(section);
         if (element) {
           const rect = element.getBoundingClientRect();
-          // Trigger when section top reaches the top half of viewport
+          // If the top of the section has reached the top half of the viewport,
+          // mark it as the current active section.
           if (rect.top <= window.innerHeight / 2) {
             currentSection = section;
           }
@@ -52,7 +66,10 @@ export default function LandingPage() {
           </div>
         </header>
 
-        {/* Home / Hero Section */}
+        {/* 
+          Home / Hero Section:
+          The main welcome area. Clicking "LEARN MORE" opens the modal. 
+        */}
         <section className="landing-section hero-section">
           <main className="landing-hero">
             <h1 className="hero-title">ENERSENSE</h1>
@@ -63,7 +80,7 @@ export default function LandingPage() {
             <button 
               onClick={(e) => {
                 e.preventDefault();
-                setIsLearnMoreModalOpen(true);
+                setIsLearnMoreModalOpen(true); // Open the modal
               }} 
               className="learn-more-btn"
             >
@@ -127,9 +144,14 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Learn More 3D Modal Overlay */}
+        {/* 
+          Learn More Modal Overlay:
+          This renders only when `isLearnMoreModalOpen` is true.
+          Clicking the dark background (modal-overlay) closes the modal.
+        */}
         {isLearnMoreModalOpen && (
           <div className="modal-overlay" onClick={() => setIsLearnMoreModalOpen(false)}>
+            {/* The inner modal content. e.stopPropagation() prevents clicks inside from closing it */}
             <div className="matte-3d-modal" onClick={(e) => e.stopPropagation()}>
               <button className="close-modal-btn" onClick={() => setIsLearnMoreModalOpen(false)}>
                 <X size={24} />

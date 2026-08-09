@@ -1,27 +1,42 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 
+/**
+ * PasswordInput Component
+ * 
+ * A reusable password input field that includes:
+ * 1. A toggle to show/hide the password text.
+ * 2. An optional password strength meter (used during signup).
+ */
 export default function PasswordInput({ value, onChange, placeholder = "Enter your password", showStrength = false }) {
+  // State to track if the password text is visible or hidden (dots)
   const [showPassword, setShowPassword] = useState(false);
 
-  // Simple strength score: 0 to 4
+  /**
+   * Calculates a simple password strength score from 0 to 4 based on complexity rules.
+   * @param {string} pass - The password string to evaluate.
+   * @returns {number} Score from 0 (weak) to 4 (very strong).
+   */
   const getStrength = (pass) => {
     if (!pass) return 0;
     let score = 0;
-    if (pass.length >= 6) score++;
-    if (pass.length >= 10) score++;
-    if (/[A-Z]/.test(pass)) score++;
-    if (/[0-9]/.test(pass) || /[^A-Za-z0-9]/.test(pass)) score++;
+    if (pass.length >= 6) score++; // Minimum length
+    if (pass.length >= 10) score++; // Better length
+    if (/[A-Z]/.test(pass)) score++; // Contains uppercase
+    if (/[0-9]/.test(pass) || /[^A-Za-z0-9]/.test(pass)) score++; // Contains number or special char
     return score;
   };
 
   const strength = getStrength(value);
 
+  /**
+   * Maps a strength score to a UI color.
+   */
   const getStrengthColor = (s) => {
-    if (s <= 1) return '#ef4444'; // Red
-    if (s === 2) return '#f59e0b'; // Amber
-    if (s === 3) return '#3b82f6'; // Blue
-    return '#10b981'; // Emerald
+    if (s <= 1) return '#ef4444'; // Red (Weak)
+    if (s === 2) return '#f59e0b'; // Amber (Medium)
+    if (s === 3) return '#3b82f6'; // Blue (Strong)
+    return '#10b981'; // Emerald (Very Strong)
   };
 
   return (
