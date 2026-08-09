@@ -21,6 +21,31 @@
   width: 100%;
   height: 240px; /* Increased from 180px */
   overflow: hidden;
+  position: relative;
+}
+
+.adv-back-btn {
+  position: absolute;
+  top: 32px;
+  left: 48px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+.adv-back-btn:hover {
+  background: rgba(0, 0, 0, 0.6);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .adv-cover-img {
@@ -126,22 +151,26 @@
 .adv-contact-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .adv-contact-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
 
 .adv-icon-muted {
-  color: #777;
+  color: #888;
 }
 
 .adv-contact-text {
-  font-size: 12px;
-  color: #bbb;
+  font-size: 14px;
+  color: #e0e0e0;
 }
 
 .adv-muted {
@@ -149,7 +178,7 @@
 }
 
 .adv-contact-link {
-  font-size: 12px;
+  font-size: 14px;
   color: #4db6ac; /* Cyan link color */
   text-decoration: none;
   cursor: pointer;
@@ -171,23 +200,22 @@
   width: 100%;
 }
 
-.adv-rating-box {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.adv-rating-score {
-  font-size: 36px;
-  font-weight: 300;
-  color: #fff;
-  line-height: 1;
-}
-
-.adv-rating-details {
+.adv-feedback-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  align-items: center;
+}
+
+.adv-feedback-title {
+  font-size: 14px;
+  color: #e0e0e0;
+  margin: 0;
+  font-weight: 600;
 }
 
 .adv-stars {
@@ -195,9 +223,30 @@
   gap: 2px;
 }
 
-.adv-reviews-count {
-  font-size: 11px;
-  color: #777;
+.adv-signout-btn {
+  position: absolute;
+  top: 32px;
+  right: 48px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.adv-signout-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.5);
+  transform: translateY(-2px);
 }
 
 
@@ -212,69 +261,132 @@
   border-radius: 12px;
   overflow: hidden;
   position: relative;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
 }
 
-/* Introduction Card */
-.adv-intro-card {
+.adv-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+}
+
+/* Energy Persona Card (White Theme) */
+.persona-white-card {
   flex: 2.2;
-  background: linear-gradient(135deg, #1f2b45, #292040); /* Simulating the light blue/purple gradient */
+  background: #ffffff;
+  border-radius: 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 300px;
+  padding: 24px;
+  position: relative;
+  min-height: 260px;
 }
 
-.adv-intro-title {
-  font-size: 48px;
-  font-weight: 800;
-  color: rgba(255, 255, 255, 0.15); /* The large faded text in background */
+.persona-badge {
   position: absolute;
-  top: 30px;
-  text-transform: capitalize;
-  letter-spacing: -1px;
-  z-index: 1;
-}
-
-.adv-play-btn {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: #2a2a2a;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 2;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-}
-
-.adv-person-cutout {
-  position: absolute;
-  bottom: 0;
-  right: 20px;
-  width: 180px;
-  height: 200px;
-  background: transparent;
-  z-index: 2;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
-
-.adv-person-placeholder {
-  width: 100%;
-  height: 100%;
-  background: #3a3a3a;
-  border-top-left-radius: 90px;
-  border-top-right-radius: 90px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 48px;
-  color: #555;
+  top: 16px;
+  background: #000000;
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 10px;
   font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.persona-icon-container {
+  width: 60px;
+  height: 60px;
+  background: #000000;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+
+.persona-subtitle {
+  color: #0ea5e9; /* Cyan */
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.persona-title {
+  color: #000000;
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1.1;
+  text-align: center;
+  margin: 0;
+  letter-spacing: -1px;
+}
+
+/* Tip of the Day Card (White Theme) */
+.tip-white-card {
+  flex: 1.2;
+  background: #ffffff;
+  border-radius: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 24px;
+  position: relative;
+  min-height: 260px;
+}
+
+.tip-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  width: 100%;
+  justify-content: center;
+}
+
+.tip-title {
+  color: #ec4899;
+  letter-spacing: 2px;
+  margin: 0;
+  font-size: 14px; /* Increased from 11px */
+  font-weight: 800;
+}
+
+.tip-content-box {
+  background: rgba(0,0,0,0.04);
+  padding: 24px;
+  border-radius: 16px;
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+.tip-quote-mark {
+  font-size: 48px;
+  position: absolute;
+  top: -16px;
+  left: 16px;
+  color: #ec4899;
+  opacity: 0.2;
+  font-family: serif;
+}
+
+.tip-text {
+  color: #333333;
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 0;
+  font-style: italic;
+  position: relative;
+  z-index: 2;
+  font-weight: 500;
 }
 
 /* Calculator Card */
@@ -296,35 +408,51 @@
   letter-spacing: 0.5px;
 }
 
-.adv-calc-illustration {
-  margin-bottom: 24px;
+.trophy-badge {
+  background: #222;
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 64px;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
 }
 
-.adv-devices-graphic {
-  width: 80px;
-  height: 80px;
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
-  gap: 12px;
-  padding: 8px;
-  background: #111b1d;
-  border-radius: 50%;
-  border: 1px dashed #4db6ac;
+.trophy-badge:hover {
+  transform: translateY(-4px);
+  border-color: #fbbf24;
+  box-shadow: 0 4px 16px rgba(251, 191, 36, 0.15);
+  background: #2a2a2a;
 }
 
-.adv-device-node {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  background: #2a3a3d;
-  position: relative;
+.trophy-badge.locked {
+  opacity: 0.4;
+  filter: grayscale(100%);
+}
+.trophy-badge.locked:hover {
+  transform: none;
+  border-color: #333;
+  box-shadow: none;
+  background: #222;
+  cursor: not-allowed;
 }
 
-.adv-device-node.active {
-  background: #4db6ac;
-  box-shadow: 0 0 12px rgba(77, 182, 172, 0.4);
+.trophy-icon {
+  font-size: 26px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+.trophy-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #ccc;
+  text-align: center;
+  line-height: 1.2;
 }
 
 .adv-calc-desc {
@@ -370,6 +498,5 @@
   .adv-body-container { flex-direction: column; }
   .adv-sidebar { width: 100%; flex-direction: row; flex-wrap: wrap; justify-content: space-between; align-items: center; }
   .adv-content-grid { flex-direction: column; }
-  .adv-intro-card { min-height: 250px; }
-  .adv-person-cutout { display: none; }
+  .persona-white-card { min-height: 240px; }
 }

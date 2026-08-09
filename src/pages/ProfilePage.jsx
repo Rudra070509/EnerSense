@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Phone, Star, Bot, MessageSquare } from 'lucide-react';
+import { Mail, Phone, Star, Bot, MessageSquare, Globe, ArrowLeft, Sparkles, LogOut } from 'lucide-react';
+import Toast from '../components/Toast';
 import '../styles/profile.css';
 
 /**
@@ -27,6 +28,22 @@ export default function ProfilePage() {
     address: 'Saint-Petersburg, Russia',
   });
 
+  // State to handle the interactive 5-star rating system
+  const [rating, setRating] = useState(0);
+  
+  // State for the notification toast
+  const [toastMessage, setToastMessage] = useState('');
+
+  // Energy Tips array
+  const tips = [
+    "Unplugging electronics when not in use can save up to 10% on your energy bill.",
+    "Washing clothes in cold water saves a significant amount of energy used for heating.",
+    "LED bulbs use 75% less energy and last 25 times longer than incandescent lighting.",
+    "Lowering your thermostat by just 2 degrees in winter can save 5% on heating costs."
+  ];
+  // Select a random tip to display
+  const [tipOfTheDay] = useState(tips[Math.floor(Math.random() * tips.length)]);
+
   // Calculate the full display name or fall back to a default
   const displayName = profileData.firstName && profileData.lastName 
     ? `${profileData.firstName} ${profileData.lastName}` 
@@ -43,6 +60,20 @@ export default function ProfilePage() {
         {/* Cover Banner */}
         <div className="adv-cover-banner">
            <img src="/assets/profile_bg.avif" alt="Cover" className="adv-cover-img" />
+           <button className="adv-back-btn" onClick={() => navigate('/dashboard')}>
+              <ArrowLeft size={20} />
+              <span>Dashboard</span>
+           </button>
+           <button 
+              className="adv-signout-btn" 
+              onClick={() => {
+                  localStorage.removeItem('enersense_user');
+                  navigate('/');
+              }}
+           >
+              <LogOut size={16} />
+              <span>Sign Out</span>
+           </button>
         </div>
 
         {/* Profile Info Row */}
@@ -71,76 +102,85 @@ export default function ProfilePage() {
            <aside className="adv-sidebar">
               <div className="adv-contact-list">
                  <div className="adv-contact-row">
-                    <Phone size={14} className="adv-icon-muted" />
-                    <span className="adv-contact-text">{profileData.phone} <span className="adv-muted">(Office)</span></span>
-                 </div>
-                 <div className="adv-contact-row">
-                    <span style={{width: 14}} /> {/* spacer */}
-                    <span className="adv-contact-text">{profileData.mobile} <span className="adv-muted">(Mobile)</span></span>
+                    <Phone size={16} className="adv-icon-muted" />
+                    <span className="adv-contact-text">{profileData.phone}</span>
                  </div>
                  <div className="adv-contact-row" style={{marginTop: 8}}>
-                    <Mail size={14} className="adv-icon-muted" />
+                    <Mail size={16} className="adv-icon-muted" />
                     <span className="adv-contact-link">{profileData.email || 'kevin.smith@stripe.com'}</span>
                  </div>
               </div>
 
-              <button className="adv-chat-btn">
-                 <MessageSquare size={14} />
-                 Feedback
-              </button>
-
-              <div className="adv-rating-box">
-                 <div className="adv-rating-score">4.5</div>
-                 <div className="adv-rating-details">
-                    <div className="adv-stars">
-                       {[1,2,3,4].map(i => <Star key={i} size={12} fill="#ffc107" color="#ffc107" />)}
-                       <Star size={12} fill="none" color="#ffc107" />
-                    </div>
-                    <span className="adv-reviews-count">103 reviews</span>
+              {/* Feedback & Review Card */}
+              <div className="adv-feedback-card">
+                 <h4 className="adv-feedback-title">Rate your experience</h4>
+                 <div className="adv-stars" style={{ justifyContent: 'center', margin: '16px 0', gap: '8px' }}>
+                    {[1,2,3,4,5].map(i => (
+                       <Star 
+                          key={i} 
+                          size={24} 
+                          fill={i <= rating ? "#ffc107" : "none"} 
+                          color={i <= rating ? "#ffc107" : "#555"} 
+                          style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+                          onClick={() => setRating(i)}
+                       />
+                    ))}
                  </div>
+                 <button 
+                    className="adv-chat-btn"
+                    onClick={() => {
+                       if (rating === 0) {
+                           setToastMessage('Please select a star rating first!');
+                       } else {
+                           setToastMessage(`Thanks for your ${rating}-star feedback!`);
+                           // Clear rating after submission
+                           setTimeout(() => setRating(0), 2000);
+                       }
+                       
+                       // Hide toast automatically after 3 seconds
+                       setTimeout(() => setToastMessage(''), 3000);
+                    }}
+                 >
+                    <MessageSquare size={14} />
+                    Leave Feedback
+                 </button>
               </div>
            </aside>
 
            {/* Right Content Area */}
            <div className="adv-content-grid">
               
-              {/* AI Assistant Card */}
-              <div className="adv-card adv-intro-card">
-                 <div className="adv-intro-bg" />
-                 <h2 className="adv-intro-title">AI Assistant</h2>
-                 <button className="adv-play-btn" onClick={() => navigate('/dashboard')}>
-                    <Bot size={20} color="#fff" style={{marginLeft: 0}} />
-                 </button>
-                 {/* Simulate the person cut-out */}
-                 <div className="adv-person-cutout">
-                    <div className="adv-person-placeholder">{avatarLetter}</div>
+              {/* Energy Persona Card (White Theme) */}
+              <div className="adv-card persona-white-card">
+                 <div className="persona-badge">Energy Persona</div>
+                 <div className="persona-icon-container">
+                    <Globe color="#fff" size={24} strokeWidth={1.5} />
                  </div>
+                 <div className="persona-subtitle">YOU ARE A</div>
+                 <h2 className="persona-title">System<br/>Saver</h2>
               </div>
 
-              {/* Connected Devices Card */}
-              <div className="adv-card adv-calc-card">
-                 <h3 className="adv-calc-title">CONNECTED DEVICES</h3>
-                 <div className="adv-calc-illustration">
-                    {/* Abstract representation of connected devices */}
-                    <div className="adv-devices-graphic">
-                       <div className="adv-device-node active"></div>
-                       <div className="adv-device-node"></div>
-                       <div className="adv-device-node active"></div>
-                       <div className="adv-device-node"></div>
-                    </div>
+              {/* Tip of the Day Card */}
+              <div className="adv-card tip-white-card">
+                 <div className="tip-header">
+                    <Sparkles size={22} color="#ec4899" />
+                    <h3 className="tip-title">TIP OF THE DAY</h3>
                  </div>
-                 <p className="adv-calc-desc">4 smart appliances currently being monitored.</p>
-                 <div className="adv-calc-dots">
-                    <span className="adv-dot active"></span>
-                    <span className="adv-dot"></span>
+                 
+                 <div className="tip-content-box">
+                    <div className="tip-quote-mark">"</div>
+                    <p className="tip-text">
+                       {tipOfTheDay}
+                    </p>
                  </div>
-                 <button className="adv-calc-btn">Manage →</button>
               </div>
 
            </div>
         </div>
       </main>
 
+      {/* Render the Toast notification component at the root level */}
+      <Toast message={toastMessage} onClose={() => setToastMessage('')} />
     </div>
   );
 }
