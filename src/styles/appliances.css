@@ -1,0 +1,331 @@
+/* ==========================================================================
+   APPLIANCES PAGE - 3D DEPTH CAROUSEL
+   ========================================================================== */
+
+.appliances-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  align-items: center;
+  justify-content: center;
+  /* Transparent background to let the LightRays shine through */
+  background: transparent;
+  color: #fff;
+  perspective: 1000px; /* Crucial for 3D depth */
+}
+
+/* Header */
+.app-header {
+  position: relative;
+  width: 100%;
+  text-align: center;
+  z-index: 50;
+  margin-bottom: 40px;
+}
+
+.app-header h1 {
+  font-size: 42px;
+  font-weight: 800;
+  margin: 0 0 8px;
+  letter-spacing: -1px;
+}
+
+.app-header p {
+  font-size: 16px;
+  color: #a0a0a0;
+  margin: 0;
+}
+
+/* ==========================================================================
+   CAROUSEL LOGIC
+   ========================================================================== */
+.carousel-container {
+  position: relative;
+  width: 100vw;
+  height: 60vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transform-style: preserve-3d;
+}
+
+.carousel-track {
+  position: relative;
+  width: 380px; /* Increased width */
+  height: 560px; /* Increased height */
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+  cursor: grab;
+}
+
+.carousel-track:active {
+  cursor: grabbing;
+}
+
+.carousel-item {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  border-radius: 24px;
+  overflow: hidden;
+  transition: all 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* Glass card look for depth cards */
+  background: #1A1A1A;
+  border: 1px solid rgba(255,255,255,0.05);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+}
+
+/* The card content inside the carousel item */
+.appliance-card {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 32px;
+  box-sizing: border-box;
+}
+
+.ac-icon-box {
+  width: 64px;
+  height: 64px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: auto; /* Pushes content down */
+}
+
+.ac-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.ac-room {
+  font-size: 14px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0 0 24px;
+  font-weight: 600;
+}
+
+.ac-stats-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.ac-wattage {
+  display: flex;
+  flex-direction: column;
+}
+
+.ac-wattage-val {
+  font-size: 28px;
+  font-weight: 800;
+  color: #68d3c8;
+}
+
+.ac-wattage-label {
+  font-size: 11px;
+  color: #888;
+  letter-spacing: 0.5px;
+}
+
+/* ==========================================================================
+   CUSTOM TOGGLE SWITCH
+   ========================================================================== */
+.app-toggle-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-toggle-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #888;
+}
+
+.app-toggle-label.active {
+  color: #fff;
+}
+
+.app-toggle {
+  position: relative;
+  width: 64px;
+  height: 32px;
+  border-radius: 32px;
+  background: #333;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.app-toggle.on {
+  background: #68d3c8; /* Cyan active */
+  box-shadow: 0 0 16px rgba(104, 211, 200, 0.4);
+}
+
+.app-toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 24px;
+  height: 24px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.app-toggle.on .app-toggle-knob {
+  transform: translateX(32px);
+}
+
+/* ==========================================================================
+   CAROUSEL NAVIGATION BUTTONS
+   ========================================================================== */
+.carousel-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(26, 26, 26, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  cursor: pointer;
+  z-index: 200;
+  transition: all 0.2s ease;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.carousel-nav-btn:hover {
+  background: rgba(40, 40, 40, 0.9);
+  transform: translateY(-50%) !important; /* Overrides the global button:hover !important rule */
+  box-shadow: 0 8px 32px rgba(104, 211, 200, 0.2);
+  border-color: rgba(104, 211, 200, 0.4);
+  color: #68d3c8;
+}
+
+.carousel-nav-btn:active {
+  background: rgba(20, 20, 20, 0.9);
+  transform: translateY(-50%) !important;
+  color: #fff;
+}
+
+.carousel-nav-btn.prev {
+  left: 22%;
+}
+
+.carousel-nav-btn.next {
+  right: 22%;
+}
+
+/* ==========================================================================
+   FLOATING WIDGETS & FILTERS
+   ========================================================================== */
+.floating-widget {
+  position: absolute;
+  bottom: 40px;
+  z-index: 100;
+  width: 280px;
+  transition: transform 0.3s ease;
+}
+
+.floating-widget:hover {
+  transform: translateY(-5px);
+}
+
+.floating-widget.bottom-left {
+  left: 40px;
+}
+
+.floating-widget.bottom-right {
+  right: 40px;
+  width: 320px;
+}
+
+.filter-pills {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.filter-pill {
+  padding: 8px 16px;
+  border-radius: 100px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #aaa;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-pill:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.filter-pill.active {
+  background: rgba(104, 211, 200, 0.15);
+  border-color: rgba(104, 211, 200, 0.4);
+  color: #68d3c8;
+}
+
+.quick-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.05);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 12px;
+}
+
+.quick-action-btn:last-child {
+  margin-bottom: 0;
+}
+
+.quick-action-btn:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.quick-action-btn.eco:hover {
+  background: rgba(163, 230, 53, 0.15);
+  border-color: rgba(163, 230, 53, 0.4);
+  color: #a3e635;
+}
+
+.quick-action-btn.off:hover {
+  background: rgba(236, 72, 153, 0.15);
+  border-color: rgba(236, 72, 153, 0.4);
+  color: #ec4899;
+}

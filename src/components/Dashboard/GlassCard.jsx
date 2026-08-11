@@ -7,7 +7,7 @@ import React from 'react';
  * It dynamically applies CSS classes based on the requested color variant 
  * (black, white, magenta, etc.) and grid span (rows/cols).
  */
-export default function GlassCard({ className = '', style = {}, children, colSpan = 4, rowSpan = 1, variant = 'glass' }) {
+export default function GlassCard({ className = '', style = {}, children, colSpan = 4, rowSpan = 1, variant = 'glass', ...rest }) {
   // Determine grid spanning classes
   const colClass = `card-col-span-${colSpan}`;
   const rowClass = rowSpan > 1 ? `card-row-span-${rowSpan}` : '';
@@ -21,7 +21,7 @@ export default function GlassCard({ className = '', style = {}, children, colSpa
   if (variant === 'lime') baseClass = 'wrapped-glass-card solid-lime-card';
   
   return (
-    <div className={`${baseClass} ${colClass} ${rowClass} ${className}`} style={style}>
+    <div className={`${baseClass} ${colClass} ${rowClass} ${className}`} style={style} {...rest}>
       {children}
     </div>
   );

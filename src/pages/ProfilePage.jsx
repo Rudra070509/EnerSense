@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Phone, Star, Bot, MessageSquare, Globe, ArrowLeft, Sparkles, LogOut } from 'lucide-react';
+import { Mail, Phone, Star, Bot, MessageSquare, Globe, ArrowLeft, Sparkles, LogOut, Edit3, Save, X, User, LayoutDashboard, Cpu, LineChart as LineChartIcon, FileText } from 'lucide-react';
 import Toast from '../components/Toast';
+import GlassSurface from '../components/GlassSurface/GlassSurface';
 import '../styles/profile.css';
 
 /**
@@ -18,15 +19,37 @@ export default function ProfilePage() {
   const savedUser = JSON.parse(localStorage.getItem('enersense_user') || '{}');
 
   // Hardcoded profile data mixed with actual data from localStorage
-  // In a real app, this would be fetched entirely from a database API.
-  const [profileData] = useState({
+  const [profileData, setProfileData] = useState({
     firstName: savedUser.firstName || '',
     lastName: savedUser.lastName || '',
     email: savedUser.email || '',
-    phone: '+9110818830',
-    mobile: '+7496 7141177',
-    address: 'Saint-Petersburg, Russia',
+    phone: savedUser.phone || '+9110818830',
+    mobile: savedUser.mobile || '+7496 7141177',
+    address: savedUser.address || 'Saint-Petersburg, Russia',
   });
+
+  const [isEditing, setIsEditing] = useState(false);
+  
+  // Temporary state for the form so we can cancel without saving
+  const [editFormData, setEditFormData] = useState({ ...profileData });
+
+  const handleSave = () => {
+    setProfileData(editFormData);
+    const updatedUser = { ...savedUser, ...editFormData };
+    localStorage.setItem('enersense_user', JSON.stringify(updatedUser));
+    setIsEditing(false);
+    setToastMessage('Profile updated successfully!');
+    setTimeout(() => setToastMessage(''), 3000);
+  };
+
+  const handleCancel = () => {
+    setEditFormData({ ...profileData });
+    setIsEditing(false);
+  };
+
+  const handleChange = (e) => {
+    setEditFormData({ ...editFormData, [e.target.name]: e.target.value });
+  };
 
   // State to handle the interactive 5-star rating system
   const [rating, setRating] = useState(0);
@@ -54,12 +77,14 @@ export default function ProfilePage() {
 
   return (
     <div className="profile-wrapper">
+
+
       
       {/* Header Section (White in ref, #1e1e1e in dark) */}
       <header className="adv-header-section">
         {/* Cover Banner */}
         <div className="adv-cover-banner">
-           <img src="/assets/profile_bg.avif" alt="Cover" className="adv-cover-img" />
+           <img src="/assets/site_bg.jpeg" alt="Cover" className="adv-cover-img" />
            <button className="adv-back-btn" onClick={() => navigate('/dashboard')}>
               <ArrowLeft size={20} />
               <span>Dashboard</span>
@@ -87,9 +112,33 @@ export default function ProfilePage() {
           
           <div className="adv-info-box">
              <div className="adv-name-row">
-               <h1>{displayName}</h1>
+               {isEditing ? (
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                     <input type="text" name="firstName" value={editFormData.firstName} onChange={handleChange} className="adv-input adv-input-large" placeholder="First Name" />
+                     <input type="text" name="lastName" value={editFormData.lastName} onChange={handleChange} className="adv-input adv-input-large" placeholder="Last Name" />
+                  </div>
+               ) : (
+                  <h1>{displayName}</h1>
+               )}
+               
+               <div style={{ display: 'flex', gap: '12px' }}>
+                  {isEditing ? (
+                     <>
+                        <button className="adv-action-btn adv-cancel" onClick={handleCancel}>
+                           <X size={16} /> Cancel
+                        </button>
+                        <button className="adv-action-btn adv-save" onClick={handleSave}>
+                           <Save size={16} /> Save
+                        </button>
+                     </>
+                  ) : (
+                     <button className="adv-action-btn adv-edit" onClick={() => setIsEditing(true)}>
+                        <Edit3 size={16} /> Edit Profile
+                     </button>
+                  )}
+               </div>
              </div>
-             <p className="adv-title">EnerSense User · Smart Home Enthusiast</p>
+             <p className="adv-title" style={{ marginTop: isEditing ? '12px' : '0' }}>EnerSense User · Smart Home Enthusiast</p>
           </div>
         </div>
       </header>
@@ -101,14 +150,22 @@ export default function ProfilePage() {
            {/* Left Sidebar */}
            <aside className="adv-sidebar">
               <div className="adv-contact-list">
-                 <div className="adv-contact-row">
-                    <Phone size={16} className="adv-icon-muted" />
-                    <span className="adv-contact-text">{profileData.phone}</span>
-                 </div>
-                 <div className="adv-contact-row" style={{marginTop: 8}}>
-                    <Mail size={16} className="adv-icon-muted" />
-                    <span className="adv-contact-link">{profileData.email || 'kevin.smith@stripe.com'}</span>
-                 </div>
+                  <div className="adv-contact-row">
+                     <Phone size={16} className="adv-icon-muted" />
+                     {isEditing ? (
+                        <input type="text" name="phone" value={editFormData.phone} onChange={handleChange} className="adv-input" placeholder="Phone" />
+                     ) : (
+                        <span className="adv-contact-text">{profileData.phone}</span>
+                     )}
+                  </div>
+                  <div className="adv-contact-row" style={{marginTop: 8}}>
+                     <Mail size={16} className="adv-icon-muted" />
+                     {isEditing ? (
+                        <input type="email" name="email" value={editFormData.email} onChange={handleChange} className="adv-input" placeholder="Email" />
+                     ) : (
+                        <span className="adv-contact-link">{profileData.email || 'kevin.smith@stripe.com'}</span>
+                     )}
+                  </div>
               </div>
 
               {/* Feedback & Review Card */}

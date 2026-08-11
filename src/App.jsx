@@ -1,11 +1,26 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+
+function GlobalBackground() {
+  const location = useLocation();
+  
+  // Hide the global plasma on the appliances page
+  if (location.pathname === '/appliances') return null;
+  
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: -1 }}>
+      <Plasma speed={0.5} />
+    </div>
+  );
+}
 
 // Import all top-level page components
 import LandingPage from './pages/LandingPage';
 import AuthPage from './pages/AuthPage';
 import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/ProfilePage';
+import AppliancesPage from './pages/AppliancesPage';
+import AlertsPage from './pages/AlertsPage';
 
 // Import the global background effect component
 import Plasma from './components/PlasmaBackground/Plasma';
@@ -24,14 +39,7 @@ import './styles/index.css';
 export default function App() {
   return (
     <BrowserRouter>
-      {/* 
-        Global Plasma Background: 
-        This div is fixed to the back of the screen (zIndex: -1) so it 
-        always renders behind the page content on every route.
-      */}
-      <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: -1 }}>
-        <Plasma speed={0.5} />
-      </div>
+      <GlobalBackground />
       
       {/* 
         Routes definition: 
@@ -49,6 +57,12 @@ export default function App() {
         
         {/* The user's account settings and profile page */}
         <Route path="/profile" element={<ProfilePage />} />
+        
+        {/* The appliances page */}
+        <Route path="/appliances" element={<AppliancesPage />} />
+        
+        {/* The alerts page */}
+        <Route path="/alerts" element={<AlertsPage />} />
       </Routes>
     </BrowserRouter>
   );

@@ -63,6 +63,71 @@
   gap: 32px;
 }
 
+/* ===== PROFILE — Exact Clone (Dark Theme) ===== */
+
+.profile-wrapper {
+  min-height: 100vh;
+  width: 100vw;
+  background-color: #0c0818; /* Match global dashboard background */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  overflow-x: hidden;
+  color: #f8fafc;
+}
+
+
+
+/* --- Header Section --- */
+.adv-header-section {
+  background: #1a1a1a; /* Corresponds to the white header background in reference */
+  padding-bottom: 24px;
+}
+
+.adv-cover-banner {
+  width: 100%;
+  height: 240px; /* Increased from 180px */
+  overflow: hidden;
+  position: relative;
+}
+
+.adv-back-btn {
+  position: absolute;
+  top: 32px;
+  left: 48px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+.adv-back-btn:hover {
+  background: rgba(0, 0, 0, 0.6);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.adv-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.adv-profile-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 32px;
+  display: flex;
+  align-items: flex-start;
+  gap: 32px;
+}
+
 .adv-avatar-box {
   margin-top: -60px; /* Overlaps the cover image */
   position: relative;
@@ -73,14 +138,17 @@
   width: 160px;
   height: 160px;
   border-radius: 50%;
-  background: #2c2c2c; /* Placeholder bg */
-  border: 6px solid #1a1a1a; /* Matches header background to look like a cutout */
+  background: #cd1f59; /* Match dashboard avatar */
+  border: 6px solid #0c0818; /* Matches new background */
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 64px;
   font-weight: 700;
-  color: #888;
+  color: #ffffff;
+  margin: 0;
+  padding: 0;
+  text-align: center;
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 
@@ -267,8 +335,10 @@
 }
 
 .adv-card {
-  border-radius: 12px;
-  overflow: hidden;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 24px;
   position: relative;
   transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
 }
@@ -508,4 +578,88 @@
   .adv-sidebar { width: 100%; flex-direction: row; flex-wrap: wrap; justify-content: space-between; align-items: center; }
   .adv-content-grid { flex-direction: column; }
   .persona-white-card { min-height: 240px; }
+}
+/* Toast Notification */
+.adv-toast {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  background: #1A1A1A;
+  color: #fff;
+  padding: 16px 24px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 500;
+  z-index: 1000;
+  border-left: 4px solid #68d3c8;
+}
+
+/* Edit Profile Styles */
+.adv-input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 14px;
+  width: 100%;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.adv-input:focus {
+  border-color: #68d3c8;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.adv-input-large {
+  font-size: 24px;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 12px;
+  width: auto;
+}
+
+.adv-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.adv-edit {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.adv-edit:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.adv-save {
+  background: #68d3c8;
+  color: #121212;
+}
+
+.adv-save:hover {
+  background: #4db6ac;
+}
+
+.adv-cancel {
+  background: transparent;
+  color: #888;
+}
+
+.adv-cancel:hover {
+  color: #fff;
 }

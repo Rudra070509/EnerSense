@@ -8,7 +8,8 @@ import {
   FileText, 
   Send,
   Loader2,
-  Trash2
+  Trash2,
+  Bell
 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, Tooltip, LabelList } from 'recharts';
 import '../styles/dashboard.css';
@@ -131,21 +132,21 @@ export default function DashboardPage() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 32px' }}>
             {/* Nav Links */}
             <nav style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-              <button className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')} style={{ padding: '8px 16px', whiteSpace: 'nowrap', color: 'rgba(255, 255, 255, 0.8)' }}>
+              <button className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')} style={{ padding: '8px 16px', whiteSpace: 'nowrap', color: '#fff' }}>
                 <LayoutDashboard size={18} />
                 <span>Dashboard</span>
               </button>
-              <button className={`nav-item ${activeTab === 'appliances' ? 'active' : ''}`} onClick={() => setActiveTab('appliances')} style={{ padding: '8px 16px', whiteSpace: 'nowrap', color: 'rgba(255, 255, 255, 0.8)' }}>
+              <button className={`nav-item ${activeTab === 'appliances' ? 'active' : ''}`} onClick={() => navigate('/appliances')} style={{ padding: '8px 16px', whiteSpace: 'nowrap', color: '#fff' }}>
                 <Cpu size={18} />
                 <span>Appliances</span>
               </button>
-              <button className="nav-item" style={{ padding: '8px 16px', whiteSpace: 'nowrap', color: 'rgba(255, 255, 255, 0.8)' }}>
+              <button className="nav-item" style={{ padding: '8px 16px', whiteSpace: 'nowrap', color: '#fff' }}>
                 <LineChartIcon size={18} />
                 <span>Energy Graphs</span>
               </button>
-              <button className="nav-item" style={{ padding: '8px 16px', whiteSpace: 'nowrap', color: 'rgba(255, 255, 255, 0.8)' }}>
-                <FileText size={18} />
-                <span>Reports</span>
+              <button className="nav-item" onClick={() => navigate('/alerts')} style={{ padding: '8px 16px', whiteSpace: 'nowrap', color: '#fff' }}>
+                <Bell size={18} />
+                <span>Alerts</span>
               </button>
 
               {/* Profile */}
@@ -245,7 +246,7 @@ export default function DashboardPage() {
             </GlassCard>
 
             {/* ROW 6-10: Middle Column */}
-            <GlassCard colSpan={3} rowSpan={5} variant="black">
+            <GlassCard colSpan={3} rowSpan={5} variant="black" style={{ cursor: 'pointer' }} onClick={() => navigate('/appliances')}>
                <h3 className="wrapped-card-label" style={{ color: '#ffffff', margin: 0, textTransform: 'none', fontSize: '20px', fontWeight: 'bold', letterSpacing: '0' }}>Top<br/>Appliances</h3>
                <span style={{ color: '#64748b', fontSize: '10px', position: 'absolute', top: 32, right: 32, textAlign: 'right' }}>Based on<br/>consumption</span>
                
