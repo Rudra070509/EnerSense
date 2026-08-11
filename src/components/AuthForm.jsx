@@ -33,33 +33,44 @@ export default function AuthForm({ onSuccess }) {
    * Called when the user clicks "Create account" or "Log in".
    * Simulates a network request delay, then processes the action.
    */
-  const handleSubmit = (e) => {
-    e.preventDefault(); // Prevent page refresh on form submit
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     setLoading(true);
     setError('');
 
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const endpoint = mode === 'signup' ? '/api/auth/signup' : '/api/auth/login';
+      const body = mode === 'signup' 
+        ? { firstName, lastName, email, password }
+        : { email, password };
 
-      if (mode === 'signup') {
-        // Mock Registration: Store name + email in local storage.
-        // We DO NOT save the password here for security reasons, 
-        // proper auth will be implemented when connected to a real database.
-        localStorage.setItem('enersense_user', JSON.stringify({ firstName, lastName, email }));
+      const response = await fetch(`http://localhost:5000${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
 
-        // Switch automatically to login mode after successful signup
-        setMode('login');
-        setPassword('');
-        
-        // Notify the parent component (AuthPage) to show a success toast, but don't redirect yet
-        onSuccess('Account created successfully! Please log in to continue.', false);
-        return;
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Authentication failed');
       }
 
-      // Mock Login: In this phase, we just let the user through.
-      // Credential validation against a database will be added later.
-      onSuccess('Welcome back! You have logged in successfully.', true);
-    }, 1200); // 1.2s delay to simulate network latency
+      if (mode === 'signup') {
+        setMode('login');
+        setPassword('');
+        onSuccess('Account created successfully! Please log in to continue.', false);
+      } else {
+        // Save the real token and user data on login
+        localStorage.setItem('enersense_token', data.token);
+        localStorage.setItem('enersense_user', JSON.stringify(data.user));
+        onSuccess('Welcome back! You have logged in successfully.', true);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   /**

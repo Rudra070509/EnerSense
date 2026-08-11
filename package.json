@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@google/genai": "^2.16.0",
+    "@react-oauth/google": "^0.13.5",
     "lucide-react": "^0.453.0",
     "ogl": "^1.0.11",
     "react": "^18.3.1",
