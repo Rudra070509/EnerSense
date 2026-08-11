@@ -160,7 +160,7 @@ export default function DashboardPage() {
         <div className="wrapped-dashboard-container">
           <div className="wrapped-grid">
             {/* ROW 1-7: Left Column */}
-            <GlassCard colSpan={6} rowSpan={7} style={{ background: "url('/assets/jellyfish_bg.png') center/cover no-repeat" }}>
+            <GlassCard colSpan={6} rowSpan={7} style={{ background: "url('/assets/site_bg.jpeg') center/cover no-repeat" }}>
               <h3 className="wrapped-card-label" style={{ color: '#ffffff' }}>POWER CONSUMED TODAY</h3>
               
               <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', width: '100%' }}>
@@ -198,8 +198,9 @@ export default function DashboardPage() {
             <GlassCard colSpan={3} rowSpan={10} variant="white" style={{ borderRadius: '80px', padding: '24px 24px 40px 24px', display: 'flex', flexDirection: 'column' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <div style={{ width: '28px' }}></div> {/* Spacer for centering */}
-                <span style={{ background: '#000', color: '#fff', padding: '6px 16px', borderRadius: '100px', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Sparkles size={14} /> AI Suggestions
+                <span style={{ background: '#1A1A1A', color: '#fff', padding: '6px 16px', borderRadius: '100px', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Sparkles size={14} color="#ec4899" />
+                  EnerSense AI
                 </span>
                 <button 
                   onClick={handleClearChat}
@@ -277,7 +278,7 @@ export default function DashboardPage() {
                     <XAxis dataKey="name" stroke="rgba(255,255,255,0.7)" fontSize={12} tickLine={false} axisLine={false} />
                     <Tooltip 
                       cursor={{ fill: 'rgba(255,255,255,0.1)' }}
-                      contentStyle={{ background: '#09090b', border: 'none', borderRadius: '12px' }}
+                      contentStyle={{ background: '#1A1A1A', border: 'none', borderRadius: '12px' }}
                       itemStyle={{ color: '#F071F0', fontWeight: 'bold' }}
                       labelStyle={{ color: 'rgba(255,255,255,0.6)', marginBottom: '4px' }}
                     />
