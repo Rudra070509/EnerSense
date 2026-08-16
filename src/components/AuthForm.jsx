@@ -39,10 +39,19 @@ export default function AuthForm({ onSuccess }) {
     setError('');
 
     try {
-      const endpoint = mode === 'signup' ? '/api/auth/signup' : '/api/auth/login';
-      const body = mode === 'signup' 
-        ? { firstName, lastName, email, password }
-        : { email, password };
+      let endpoint = '';
+      let body = {};
+      
+      if (mode === 'signup') {
+        endpoint = '/api/auth/signup';
+        body = { firstName, lastName, email, password };
+      } else if (mode === 'login') {
+        endpoint = '/api/auth/login';
+        body = { email, password };
+      } else if (mode === 'forgot') {
+        endpoint = '/api/auth/forgot-password';
+        body = { email };
+      }
 
       const response = await fetch(`http://localhost:5000${endpoint}`, {
         method: 'POST',
@@ -60,11 +69,14 @@ export default function AuthForm({ onSuccess }) {
         setMode('login');
         setPassword('');
         onSuccess('Account created successfully! Please log in to continue.', false);
-      } else {
+      } else if (mode === 'login') {
         // Save the real token and user data on login
         localStorage.setItem('enersense_token', data.token);
         localStorage.setItem('enersense_user', JSON.stringify(data.user));
         onSuccess('Welcome back! You have logged in successfully.', true);
+      } else if (mode === 'forgot') {
+        onSuccess('If an account with that email exists, a reset link was sent.', false);
+        setMode('login');
       }
     } catch (err) {
       setError(err.message);
@@ -85,20 +97,27 @@ export default function AuthForm({ onSuccess }) {
       {/* Title & Mode Switcher */}
       <div className="form-header">
         <h1 className="form-title">
-          {mode === 'signup' ? 'Create an account' : 'Welcome back'}
+          {mode === 'signup' ? 'Create an account' : mode === 'forgot' ? 'Reset your password' : 'Welcome back'}
         </h1>
         <p className="form-subtitle">
           {mode === 'signup' ? (
             <>
               Already have an account?{' '}
-              <button type="button" className="mode-toggle-btn" onClick={toggleMode}>
+              <button type="button" className="mode-toggle-btn" onClick={() => setMode('login')}>
+                Log in
+              </button>
+            </>
+          ) : mode === 'forgot' ? (
+            <>
+              Remember your password?{' '}
+              <button type="button" className="mode-toggle-btn" onClick={() => setMode('login')}>
                 Log in
               </button>
             </>
           ) : (
             <>
               Don't have an account?{' '}
-              <button type="button" className="mode-toggle-btn" onClick={toggleMode}>
+              <button type="button" className="mode-toggle-btn" onClick={() => setMode('signup')}>
                 Create an account
               </button>
             </>
@@ -140,53 +159,57 @@ export default function AuthForm({ onSuccess }) {
         />
 
         {/* Password Input */}
-        <PasswordInput
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder={mode === 'signup' ? 'Enter your password' : 'Your password'}
-          showStrength={mode === 'signup'}
-        />
+        {mode !== 'forgot' && (
+          <PasswordInput
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder={mode === 'signup' ? 'Enter your password' : 'Your password'}
+            showStrength={mode === 'signup'}
+          />
+        )}
 
         {/* Form Options Row (Terms or Remember Me) */}
-        <div className="form-options-row">
-          {mode === 'signup' ? (
-            <label className="checkbox-container">
-              <input
-                type="checkbox"
-                checked={agreeTerms}
-                onChange={(e) => setAgreeTerms(e.target.checked)}
-                required
-              />
-              <span className="custom-checkbox">
-                {agreeTerms && <Check size={14} strokeWidth={3} />}
-              </span>
-              <span>
-                I agree to the{' '}
-                <a href="#terms" className="terms-link" onClick={(e) => e.preventDefault()}>
-                  Terms & Conditions
-                </a>
-              </span>
-            </label>
-          ) : (
-            <>
+        {mode !== 'forgot' && (
+          <div className="form-options-row">
+            {mode === 'signup' ? (
               <label className="checkbox-container">
                 <input
                   type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
+                  checked={agreeTerms}
+                  onChange={(e) => setAgreeTerms(e.target.checked)}
+                  required
                 />
                 <span className="custom-checkbox">
-                  {rememberMe && <Check size={14} strokeWidth={3} />}
+                  {agreeTerms && <Check size={14} strokeWidth={3} />}
                 </span>
-                <span>Remember me</span>
+                <span>
+                  I agree to the{' '}
+                  <a href="#terms" className="terms-link" onClick={(e) => e.preventDefault()}>
+                    Terms & Conditions
+                  </a>
+                </span>
               </label>
+            ) : (
+              <>
+                <label className="checkbox-container">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                  />
+                  <span className="custom-checkbox">
+                    {rememberMe && <Check size={14} strokeWidth={3} />}
+                  </span>
+                  <span>Remember me</span>
+                </label>
 
-              <a href="#forgot" className="forgot-link" onClick={(e) => e.preventDefault()}>
-                Forgot password?
-              </a>
-            </>
-          )}
-        </div>
+                <a href="#forgot" className="forgot-link" onClick={(e) => { e.preventDefault(); setMode('forgot'); }}>
+                  Forgot password?
+                </a>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Error Message */}
         {error && (
@@ -209,7 +232,7 @@ export default function AuthForm({ onSuccess }) {
           {loading ? (
             <div className="spinner" />
           ) : (
-            <span>{mode === 'signup' ? 'Create account' : 'Log in'}</span>
+            <span>{mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Send Reset Link' : 'Log in'}</span>
           )}
         </button>
       </form>

@@ -99,24 +99,24 @@ export default function LandingPage() {
               {/* Developer 1 Placeholder */}
               <div className="glass-panel team-card">
                 <div className="team-avatar"></div>
-                <h3 className="team-name">[Developer Name]</h3>
-                <p className="team-roll">Roll No: [Number]</p>
+                <h3 className="team-name">Farhan Baig</h3>
+                <p className="team-roll">Roll No: B003</p>
                 <p className="team-role">Role: [Project Role / What they did]</p>
               </div>
 
               {/* Developer 2 Placeholder */}
               <div className="glass-panel team-card">
                 <div className="team-avatar"></div>
-                <h3 className="team-name">[Developer Name]</h3>
-                <p className="team-roll">Roll No: [Number]</p>
+                <h3 className="team-name">Rudra Shetye</h3>
+                <p className="team-roll">Roll No: B059</p>
                 <p className="team-role">Role: [Project Role / What they did]</p>
               </div>
 
               {/* Developer 3 Placeholder */}
               <div className="glass-panel team-card">
                 <div className="team-avatar"></div>
-                <h3 className="team-name">[Developer Name]</h3>
-                <p className="team-roll">Roll No: [Number]</p>
+                <h3 className="team-name">Arif Chaudhary</h3>
+                <p className="team-roll">Roll No: B065</p>
                 <p className="team-role">Role: [Project Role / What they did]</p>
               </div>
             </div>

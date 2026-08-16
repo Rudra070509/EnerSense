@@ -17,6 +17,7 @@ function GlobalBackground() {
 // Import all top-level page components
 import LandingPage from './pages/LandingPage';
 import AuthPage from './pages/AuthPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/ProfilePage';
 import AppliancesPage from './pages/AppliancesPage';
@@ -51,6 +52,9 @@ export default function App() {
         
         {/* The sign up / sign in page */}
         <Route path="/login" element={<AuthPage />} />
+        
+        {/* The reset password page */}
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         
         {/* The main dashboard where energy stats and AI chat live */}
         <Route path="/dashboard" element={<DashboardPage />} />
