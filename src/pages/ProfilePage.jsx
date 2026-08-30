@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Phone, Star, Bot, MessageSquare, Globe, ArrowLeft, Sparkles, LogOut, Edit3, Save, X, User, LayoutDashboard, Cpu, LineChart as LineChartIcon, FileText } from 'lucide-react';
+import { Mail, Phone, Star, ArrowLeft, LogOut, Edit3, Save, X } from 'lucide-react';
 import Toast from '../components/Toast';
-import GlassSurface from '../components/GlassSurface/GlassSurface';
 import '../styles/profile.css';
 
 /**
@@ -23,9 +22,7 @@ export default function ProfilePage() {
     firstName: savedUser.firstName || '',
     lastName: savedUser.lastName || '',
     email: savedUser.email || '',
-    phone: savedUser.phone || '',
-    mobile: savedUser.mobile || '',
-    address: savedUser.address || '',
+    phone: savedUser.phone || ''
   });
 
   const [isEditing, setIsEditing] = useState(false);
@@ -52,14 +49,12 @@ export default function ProfilePage() {
             firstName: data.first_name || '',
             lastName: data.last_name || '',
             email: data.email || '',
-            phone: data.phone || '',
-            mobile: data.phone || '', 
-            address: data.address || '',
+            phone: data.phone || ''
           };
           setProfileData(fetchedData);
           setEditFormData(fetchedData);
           
-          // Update local storage so navbar gets the new PFP on mount if it changed
+          // Update local storage so navbar gets the new info on mount if it changed
           const updatedUser = { ...savedUser, ...fetchedData };
           localStorage.setItem('enersense_user', JSON.stringify(updatedUser));
         }

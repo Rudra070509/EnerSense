@@ -14,6 +14,13 @@ import '../styles/dashboard.css';
 import GlassSurface from '../components/GlassSurface/GlassSurface';
 import GlassCard from '../components/Dashboard/GlassCard';
 
+/**
+ * AlertsPage Component
+ * 
+ * Displays system notifications, warnings, and insights about energy usage.
+ * Features a scrollable inbox feed of historical alerts.
+ */
+
 // Dummy data for notifications
 const NOTIFICATIONS = [
   { id: 1, type: 'warning', text: 'AC taking too much power from past 5 hours.', time: '10 mins ago', icon: Zap, color: '#f59e0b' },

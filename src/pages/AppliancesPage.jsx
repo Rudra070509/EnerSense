@@ -4,7 +4,6 @@ import {
   LayoutDashboard, 
   Cpu, 
   LineChart as LineChartIcon, 
-  FileText,
   Zap,
   PowerOff,
   Activity,
@@ -15,6 +14,13 @@ import '../styles/appliances.css';
 import GlassSurface from '../components/GlassSurface/GlassSurface';
 import DepthCarousel from '../components/Appliances/DepthCarousel';
 import LightRays from '../components/Backgrounds/LightRays';
+
+/**
+ * AppliancesPage Component
+ * 
+ * Displays and controls connected smart appliances.
+ * It features a 3D depth carousel of active appliances and a summary of current power draw.
+ */
 
 const INITIAL_APPLIANCES = [
   { id: 1, type: 'ac', name: 'Smart AC', room: 'Living Room', wattage: 1200, isOn: true, image: '/assets/appliance_card1.jpg' },

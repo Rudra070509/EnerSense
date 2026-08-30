@@ -1,3 +1,10 @@
+/**
+ * EnerSense Backend API Server
+ * 
+ * This Express server handles all authentication (local + Google),
+ * password resets via email OTP, profile management, and database initialization.
+ */
+
 const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcrypt');

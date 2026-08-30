@@ -5,7 +5,6 @@ import {
   Cpu, 
   LineChart as LineChartIcon, 
   Sparkles, 
-  FileText, 
   Send,
   Loader2,
   Trash2,
@@ -33,16 +32,6 @@ const mockUsageData = [
   { name: 'Fri', value: 380, saved: 140 },
   { name: 'Sat', value: 200, saved: 200 },
   { name: 'Sun', value: 250, saved: 180 },
-];
-
-const categoryData = [
-  { name: 'Mon', value: 20 },
-  { name: 'Tue', value: 35 },
-  { name: 'Wed', value: 25 },
-  { name: 'Thu', value: 45 },
-  { name: 'Fri', value: 30 },
-  { name: 'Sat', value: 55 },
-  { name: 'Sun', value: 40 }
 ];
 
 export default function DashboardPage() {
