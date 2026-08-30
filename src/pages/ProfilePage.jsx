@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Phone, Star, Bot, MessageSquare, Globe, ArrowLeft, Sparkles, LogOut, Edit3, Save, X, User, LayoutDashboard, Cpu, LineChart as LineChartIcon, FileText } from 'lucide-react';
 import Toast from '../components/Toast';
@@ -18,14 +18,14 @@ export default function ProfilePage() {
   // If no user is logged in, it defaults to an empty object.
   const savedUser = JSON.parse(localStorage.getItem('enersense_user') || '{}');
 
-  // Hardcoded profile data mixed with actual data from localStorage
+  // Profile state
   const [profileData, setProfileData] = useState({
     firstName: savedUser.firstName || '',
     lastName: savedUser.lastName || '',
     email: savedUser.email || '',
-    phone: savedUser.phone || '+9110818830',
-    mobile: savedUser.mobile || '+7496 7141177',
-    address: savedUser.address || 'Saint-Petersburg, Russia',
+    phone: savedUser.phone || '',
+    mobile: savedUser.mobile || '',
+    address: savedUser.address || '',
   });
 
   const [isEditing, setIsEditing] = useState(false);
@@ -33,13 +33,79 @@ export default function ProfilePage() {
   // Temporary state for the form so we can cancel without saving
   const [editFormData, setEditFormData] = useState({ ...profileData });
 
-  const handleSave = () => {
-    setProfileData(editFormData);
-    const updatedUser = { ...savedUser, ...editFormData };
-    localStorage.setItem('enersense_user', JSON.stringify(updatedUser));
-    setIsEditing(false);
-    setToastMessage('Profile updated successfully!');
-    setTimeout(() => setToastMessage(''), 3000);
+  // Fetch real data on mount
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem('enersense_token');
+        if (!token) return;
+
+        const response = await fetch('http://localhost:5000/api/user/profile', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const fetchedData = {
+            firstName: data.first_name || '',
+            lastName: data.last_name || '',
+            email: data.email || '',
+            phone: data.phone || '',
+            mobile: data.phone || '', 
+            address: data.address || '',
+          };
+          setProfileData(fetchedData);
+          setEditFormData(fetchedData);
+          
+          // Update local storage so navbar gets the new PFP on mount if it changed
+          const updatedUser = { ...savedUser, ...fetchedData };
+          localStorage.setItem('enersense_user', JSON.stringify(updatedUser));
+        }
+      } catch (err) {
+        console.error('Failed to fetch profile', err);
+      }
+    };
+    
+    fetchProfile();
+  }, []);
+
+  const handleSave = async () => {
+    try {
+      const token = localStorage.getItem('enersense_token');
+      if (!token) throw new Error('No authentication token found.');
+
+      const response = await fetch('http://localhost:5000/api/user/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          firstName: editFormData.firstName,
+          lastName: editFormData.lastName,
+          phone: editFormData.phone
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update profile');
+      }
+
+      setProfileData(editFormData);
+      
+      const updatedUser = { ...savedUser, ...editFormData };
+      localStorage.setItem('enersense_user', JSON.stringify(updatedUser));
+      
+      setIsEditing(false);
+      setToastMessage('Profile updated successfully!');
+      setTimeout(() => setToastMessage(''), 3000);
+    } catch (err) {
+      console.error(err);
+      setToastMessage('Error updating profile.');
+      setTimeout(() => setToastMessage(''), 3000);
+    }
   };
 
   const handleCancel = () => {
@@ -155,7 +221,7 @@ export default function ProfilePage() {
                      {isEditing ? (
                         <input type="text" name="phone" value={editFormData.phone} onChange={handleChange} className="adv-input" placeholder="Phone" />
                      ) : (
-                        <span className="adv-contact-text">{profileData.phone}</span>
+                        <span className="adv-contact-text" style={{ opacity: profileData.phone ? 1 : 0.5 }}>{profileData.phone || 'Add number'}</span>
                      )}
                   </div>
                   <div className="adv-contact-row" style={{marginTop: 8}}>

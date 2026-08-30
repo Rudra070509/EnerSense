@@ -51,6 +51,7 @@ const initDB = async () => {
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id VARCHAR(255) UNIQUE`);
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token VARCHAR(255)`);
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token_expiry TIMESTAMP`);
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(50)`);
 
     console.log('Database initialized successfully.');
   } catch (err) {
@@ -206,27 +207,26 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       return res.status(400).json({ error: 'This account uses Google Sign-In. Please log in with Google.' });
     }
 
-    // Generate token and expiry (1 hour)
-    const resetToken = crypto.randomBytes(32).toString('hex');
+    // Generate 6-digit OTP and expiry (1 hour)
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
     // Save to DB
     await pool.query(
       'UPDATE users SET reset_token = $1, reset_token_expiry = $2 WHERE id = $3',
-      [resetToken, expiry, user.id]
+      [otp, expiry, user.id]
     );
 
     // Send Email
-    const resetUrl = `http://localhost:3000/reset-password?token=${resetToken}`;
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: email,
-      subject: 'EnerSense - Password Reset Request',
+      subject: 'EnerSense - Password Reset OTP',
       html: `
         <h2>EnerSense Password Reset</h2>
-        <p>You requested a password reset. Click the button below to choose a new password.</p>
-        <a href="${resetUrl}" style="display: inline-block; padding: 10px 20px; color: white; background-color: #3b82f6; text-decoration: none; border-radius: 5px; font-weight: bold;">Reset Password</a>
-        <p style="margin-top: 20px; font-size: 12px; color: #666;">If you didn't request this, you can safely ignore this email. This link expires in 1 hour.</p>
+        <p>You requested a password reset. Please enter the following 6-digit OTP on the website to reset your password:</p>
+        <h1 style="font-size: 32px; letter-spacing: 5px; color: #3b82f6;">${otp}</h1>
+        <p style="margin-top: 20px; font-size: 12px; color: #666;">If you didn't request this, you can safely ignore this email. This OTP expires in 1 hour.</p>
       `
     };
 
@@ -240,19 +240,19 @@ app.post('/api/auth/forgot-password', async (req, res) => {
   }
 });
 
-// 5. Reset Password Route
+// 5. Reset Password Route (with OTP)
 app.post('/api/auth/reset-password', async (req, res) => {
   try {
-    const { token, newPassword } = req.body;
+    const { email, otp, newPassword } = req.body;
 
-    // Find user by valid token
+    // Find user by valid OTP and email
     const userResult = await pool.query(
-      'SELECT * FROM users WHERE reset_token = $1 AND reset_token_expiry > NOW()',
-      [token]
+      'SELECT * FROM users WHERE email = $1 AND reset_token = $2 AND reset_token_expiry > NOW()',
+      [email, otp]
     );
 
     if (userResult.rows.length === 0) {
-      return res.status(400).json({ error: 'Invalid or expired reset token.' });
+      return res.status(400).json({ error: 'Invalid or expired OTP.' });
     }
 
     const user = userResult.rows[0];
@@ -270,6 +270,58 @@ app.post('/api/auth/reset-password', async (req, res) => {
     res.status(200).json({ message: 'Password has been reset successfully. You can now log in.' });
   } catch (err) {
     console.error('Reset password error:', err);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+// --- Protected Routes ---
+
+// JWT Authentication Middleware
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // "Bearer TOKEN"
+  
+  if (!token) return res.status(401).json({ error: 'Access denied. No token provided.' });
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ error: 'Invalid or expired token.' });
+    req.user = user; // attach decoded user info (userId, email) to req
+    next();
+  });
+};
+
+// 6. Get User Profile
+app.get('/api/user/profile', authenticateToken, async (req, res) => {
+  try {
+    const userResult = await pool.query(
+      'SELECT id, first_name, last_name, email, phone, created_at FROM users WHERE id = $1',
+      [req.user.userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    res.status(200).json(userResult.rows[0]);
+  } catch (err) {
+    console.error('Fetch profile error:', err);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+// 7. Update User Profile
+app.put('/api/user/profile', authenticateToken, async (req, res) => {
+  try {
+    const { firstName, lastName, phone } = req.body;
+
+    const updateResult = await pool.query(
+      'UPDATE users SET first_name = $1, last_name = $2, phone = $3 WHERE id = $4 RETURNING id, first_name, last_name, email, phone, created_at',
+      [firstName, lastName, phone, req.user.userId]
+    );
+
+    res.status(200).json({ message: 'Profile updated successfully.', user: updateResult.rows[0] });
+  } catch (err) {
+    console.error('Update profile error:', err);
     res.status(500).json({ error: 'Internal server error.' });
   }
 });

@@ -26,7 +26,8 @@ const NOTIFICATIONS = [
 export default function AlertsPage() {
   const navigate = useNavigate();
   const [activeTab] = useState('alerts');
-  const avatarLetter = 'JD'.split(' ').map(n => n[0]).join('');
+  const savedUser = JSON.parse(localStorage.getItem('enersense_user') || '{}');
+  const avatarLetter = (savedUser.firstName || savedUser.email || 'K')[0].toUpperCase();
 
   return (
     <div className="dashboard-layout">
@@ -68,6 +69,7 @@ export default function AlertsPage() {
                 <span>Alerts</span>
               </button>
 
+              {/* Profile */}
               <div onClick={() => navigate('/profile')} style={{ width: 36, height: 36, minWidth: 36, minHeight: 36, flexShrink: 0, borderRadius: '50%', background: '#cd1f59', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold', marginLeft: '12px', cursor: 'pointer', transition: 'transform 0.2s ease, box-shadow 0.2s ease' }} onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.1)'; e.currentTarget.style.boxShadow = '0 0 16px rgba(205,31,89,0.5)'; }} onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}>
                 {avatarLetter}
               </div>

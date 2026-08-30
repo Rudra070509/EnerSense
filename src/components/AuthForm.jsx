@@ -20,6 +20,8 @@ export default function AuthForm({ onSuccess }) {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [otp, setOtp] = useState('');
   
   // Checkbox states
   const [agreeTerms, setAgreeTerms] = useState(true);
@@ -42,6 +44,12 @@ export default function AuthForm({ onSuccess }) {
       let endpoint = '';
       let body = {};
       
+      if (mode === 'reset') {
+        if (password !== confirmPassword) {
+          throw new Error('Passwords do not match');
+        }
+      }
+
       if (mode === 'signup') {
         endpoint = '/api/auth/signup';
         body = { firstName, lastName, email, password };
@@ -51,6 +59,9 @@ export default function AuthForm({ onSuccess }) {
       } else if (mode === 'forgot') {
         endpoint = '/api/auth/forgot-password';
         body = { email };
+      } else if (mode === 'reset') {
+        endpoint = '/api/auth/reset-password';
+        body = { email, otp, newPassword: password };
       }
 
       const response = await fetch(`http://localhost:5000${endpoint}`, {
@@ -75,8 +86,14 @@ export default function AuthForm({ onSuccess }) {
         localStorage.setItem('enersense_user', JSON.stringify(data.user));
         onSuccess('Welcome back! You have logged in successfully.', true);
       } else if (mode === 'forgot') {
-        onSuccess('If an account with that email exists, a reset link was sent.', false);
+        onSuccess('An OTP has been sent to your email.', false);
+        setMode('reset');
+      } else if (mode === 'reset') {
+        onSuccess('Password reset successfully! Please log in.', false);
         setMode('login');
+        setPassword('');
+        setConfirmPassword('');
+        setOtp('');
       }
     } catch (err) {
       setError(err.message);
@@ -114,6 +131,8 @@ export default function AuthForm({ onSuccess }) {
                 Log in
               </button>
             </>
+          ) : mode === 'reset' ? (
+            'Enter the 6-digit OTP sent to your email.'
           ) : (
             <>
               Don't have an account?{' '}
@@ -156,20 +175,44 @@ export default function AuthForm({ onSuccess }) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          disabled={mode === 'reset'}
         />
+
+        {/* OTP Input */}
+        {mode === 'reset' && (
+          <input
+            type="text"
+            className="custom-input"
+            placeholder="6-digit OTP"
+            value={otp}
+            onChange={(e) => setOtp(e.target.value)}
+            required
+            maxLength={6}
+          />
+        )}
 
         {/* Password Input */}
         {mode !== 'forgot' && (
           <PasswordInput
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder={mode === 'signup' ? 'Enter your password' : 'Your password'}
-            showStrength={mode === 'signup'}
+            placeholder={mode === 'signup' ? 'Enter your password' : mode === 'reset' ? 'New password' : 'Your password'}
+            showStrength={mode === 'signup' || mode === 'reset'}
+          />
+        )}
+
+        {/* Confirm Password Input */}
+        {mode === 'reset' && (
+          <PasswordInput
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="Confirm new password"
+            showStrength={false}
           />
         )}
 
         {/* Form Options Row (Terms or Remember Me) */}
-        {mode !== 'forgot' && (
+        {(mode === 'signup' || mode === 'login') && (
           <div className="form-options-row">
             {mode === 'signup' ? (
               <label className="checkbox-container">
@@ -232,13 +275,15 @@ export default function AuthForm({ onSuccess }) {
           {loading ? (
             <div className="spinner" />
           ) : (
-            <span>{mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Send Reset Link' : 'Log in'}</span>
+            <span>{mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Send OTP' : mode === 'reset' ? 'Reset Password' : 'Log in'}</span>
           )}
         </button>
       </form>
 
       {/* Social Logins */}
-      <SocialButtons mode={mode} onGoogleSuccess={onSuccess} />
+      {(mode === 'signup' || mode === 'login') && (
+        <SocialButtons mode={mode} onGoogleSuccess={onSuccess} />
+      )}
     </div>
   );
 }
