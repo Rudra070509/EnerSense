@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { MqttContext } from '../context/MqttContext';
 import { 
   LayoutDashboard, 
   Cpu, 
@@ -19,10 +20,6 @@ import { getGeminiResponse } from '../utils/gemini';
 
 /**
  * DashboardPage Component
- * 
- * This is the primary application interface where users view their energy 
- * consumption data, estimated bills, top appliances, and interact with the AI assistant.
- * It uses a Bento-box style grid layout made up of customized GlassCards.
  */
 
 const mockUsageData = [
@@ -35,18 +32,9 @@ const mockUsageData = [
   { name: 'Sun', value: 250, saved: 180 },
 ];
 
-const categoryData = [
-  { name: 'Mon', value: 20 },
-  { name: 'Tue', value: 35 },
-  { name: 'Wed', value: 25 },
-  { name: 'Thu', value: 45 },
-  { name: 'Fri', value: 30 },
-  { name: 'Sat', value: 55 },
-  { name: 'Sun', value: 40 }
-];
-
 export default function DashboardPage() {
   const navigate = useNavigate();
+  const { liveEnergy } = useContext(MqttContext);
   
   // Controls the currently active tab in the top navigation bar (e.g., 'dashboard', 'appliances')
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -140,7 +128,7 @@ export default function DashboardPage() {
                 <Cpu size={18} />
                 <span>Appliances</span>
               </button>
-              <button className="nav-item" style={{ padding: '8px 16px', whiteSpace: 'nowrap', color: '#fff' }}>
+              <button className={`nav-item ${activeTab === 'graphs' ? 'active' : ''}`} onClick={() => navigate('/graphs')} style={{ padding: '8px 16px', whiteSpace: 'nowrap', color: '#fff' }}>
                 <LineChartIcon size={18} />
                 <span>Energy Graphs</span>
               </button>
@@ -168,7 +156,7 @@ export default function DashboardPage() {
               
               <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', width: '100%' }}>
                 <div style={{ flex: 1, paddingRight: '24px' }}>
-                  <div className="wrapped-card-value" style={{ fontSize: '120px', color: '#ffffff', lineHeight: 1 }}>14.2</div>
+                  <div className="wrapped-card-value" style={{ fontSize: '120px', color: '#ffffff', lineHeight: 1 }}>{liveEnergy}</div>
                   <div className="wrapped-card-subvalue" style={{ color: '#ffffff', opacity: 0.8, fontSize: '16px', fontWeight: 'normal', marginTop: '8px' }}>
                     kWh consumed since midnight.
                   </div>

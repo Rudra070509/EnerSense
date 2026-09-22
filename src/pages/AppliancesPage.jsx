@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { MqttContext } from '../context/MqttContext';
 import { 
   LayoutDashboard, 
   Cpu, 
@@ -16,26 +17,15 @@ import GlassSurface from '../components/GlassSurface/GlassSurface';
 import DepthCarousel from '../components/Appliances/DepthCarousel';
 import LightRays from '../components/Backgrounds/LightRays';
 
-const INITIAL_APPLIANCES = [
-  { id: 1, type: 'ac', name: 'Smart AC', room: 'Living Room', wattage: 1200, isOn: true, image: '/assets/appliance_card1.jpg' },
-  { id: 2, type: 'tv', name: 'OLED TV', room: 'Living Room', wattage: 150, isOn: false, image: '/assets/appliance_card2.jpg' },
-  { id: 3, type: 'light', name: 'Hue Lights', room: 'Bedroom', wattage: 35, isOn: true, image: '/assets/appliance_card3.jpg' },
-];
-
 export default function AppliancesPage() {
   const navigate = useNavigate();
   const [activeTab] = useState('appliances');
-  const [appliances, setAppliances] = useState(INITIAL_APPLIANCES);
-  const [activeFilter, setActiveFilter] = useState('All');
+  
+  // Use context
+  const { appliances, toggleAppliance, turnAllOff } = useContext(MqttContext);
 
   const totalDraw = appliances.reduce((sum, app) => app.isOn ? sum + app.wattage : sum, 0);
   const activeCount = appliances.filter(app => app.isOn).length;
-
-  const toggleAppliance = (id) => {
-    setAppliances(prev => prev.map(app => 
-      app.id === id ? { ...app, isOn: !app.isOn } : app
-    ));
-  };
 
   // Retrieve user initial
   const savedUser = JSON.parse(localStorage.getItem('enersense_user') || '{}');
@@ -72,7 +62,7 @@ export default function AppliancesPage() {
                 <Cpu size={18} />
                 <span>Appliances</span>
               </button>
-              <button className="nav-item" style={{ padding: '8px 16px', whiteSpace: 'nowrap', color: '#fff' }}>
+              <button className={`nav-item ${activeTab === 'graphs' ? 'active' : ''}`} onClick={() => navigate('/graphs')} style={{ padding: '8px 16px', whiteSpace: 'nowrap', color: '#fff' }}>
                 <LineChartIcon size={18} />
                 <span>Energy Graphs</span>
               </button>
@@ -150,7 +140,7 @@ export default function AppliancesPage() {
                 <div style={{ fontSize: '12px', color: '#888', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '16px', fontWeight: 600 }}>Quick Actions</div>
                 
                 {/* Only keeping the master off switch as requested */}
-                <button className="quick-action-btn off" onClick={() => setAppliances(prev => prev.map(a => ({...a, isOn: false})))}>
+                <button className="quick-action-btn off" onClick={turnAllOff}>
                   <PowerOff size={18} color="#ec4899" />
                   Turn All Off
                 </button>
