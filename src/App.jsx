@@ -21,6 +21,9 @@ import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/ProfilePage';
 import AppliancesPage from './pages/AppliancesPage';
 import AlertsPage from './pages/AlertsPage';
+import EnergyGraphsPage from './pages/EnergyGraphsPage';
+
+import { MqttProvider } from './context/MqttContext';
 
 // Import the global background effect component
 import Plasma from './components/PlasmaBackground/Plasma';
@@ -40,30 +43,34 @@ export default function App() {
   return (
     <BrowserRouter>
       <GlobalBackground />
-      
-      {/* 
-        Routes definition: 
-        Maps specific URL paths to the corresponding page components.
-      */}
-      <Routes>
-        {/* The main marketing / landing page */}
-        <Route path="/" element={<LandingPage />} />
-        
-        {/* The sign up / sign in page */}
-        <Route path="/login" element={<AuthPage />} />
-        
-        {/* The main dashboard where energy stats and AI chat live */}
-        <Route path="/dashboard" element={<DashboardPage />} />
-        
-        {/* The user's account settings and profile page */}
-        <Route path="/profile" element={<ProfilePage />} />
-        
-        {/* The appliances page */}
-        <Route path="/appliances" element={<AppliancesPage />} />
-        
-        {/* The alerts page */}
-        <Route path="/alerts" element={<AlertsPage />} />
-      </Routes>
+      <MqttProvider>
+        {/* 
+          Routes definition: 
+          Maps specific URL paths to the corresponding page components.
+        */}
+        <Routes>
+          {/* The main marketing / landing page */}
+          <Route path="/" element={<LandingPage />} />
+          
+          {/* The sign up / sign in page */}
+          <Route path="/login" element={<AuthPage />} />
+          
+          {/* The main dashboard where energy stats and AI chat live */}
+          <Route path="/dashboard" element={<DashboardPage />} />
+          
+          {/* The user's account settings and profile page */}
+          <Route path="/profile" element={<ProfilePage />} />
+          
+          {/* The appliances page */}
+          <Route path="/appliances" element={<AppliancesPage />} />
+          
+          {/* The alerts page */}
+          <Route path="/alerts" element={<AlertsPage />} />
+
+          {/* The live energy graphs page */}
+          <Route path="/graphs" element={<EnergyGraphsPage />} />
+        </Routes>
+      </MqttProvider>
     </BrowserRouter>
   );
 }
