@@ -31,29 +31,44 @@ export const MqttProvider = ({ children }) => {
       if (topic === 'enersense/telemetry') {
         try {
           const data = JSON.parse(message.toString());
-          if (data.appliance1) {
-            // Update live energy
-            if (data.appliance1.energy !== undefined) {
-              setLiveEnergy(data.appliance1.energy.toFixed(3));
-            }
-            
-            // Update appliance 1 wattage
-            if (data.appliance1.power !== undefined) {
-              const powerVal = Math.round(data.appliance1.power);
-              setAppliances(prev => prev.map(app => 
-                app.id === 1 ? { ...app, wattage: powerVal } : app
-              ));
+          
+          let totalEnergy = 0;
+          let combinedPower = 0;
 
-              // Update graph data
-              const now = new Date();
-              const timeStr = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-              const newPoint = { time: timeStr, power: powerVal };
-              
-              const newData = [...powerDataRef.current.slice(1), newPoint];
-              powerDataRef.current = newData;
-              setPowerData(newData);
-            }
+          if (data.appliance1) {
+            if (data.appliance1.energy !== undefined) totalEnergy += data.appliance1.energy;
+            if (data.appliance1.power !== undefined) combinedPower += data.appliance1.power;
           }
+          if (data.appliance2) {
+            if (data.appliance2.energy !== undefined) totalEnergy += data.appliance2.energy;
+            if (data.appliance2.power !== undefined) combinedPower += data.appliance2.power;
+          }
+          
+          // Update live energy total
+          if (totalEnergy > 0) {
+            setLiveEnergy(totalEnergy.toFixed(3));
+          }
+          
+          // Update appliance wattages in array
+          setAppliances(prev => prev.map(app => {
+            if (app.id === 1 && data.appliance1 && data.appliance1.power !== undefined) {
+              return { ...app, wattage: Math.round(data.appliance1.power) };
+            }
+            if (app.id === 2 && data.appliance2 && data.appliance2.power !== undefined) {
+              return { ...app, wattage: Math.round(data.appliance2.power) };
+            }
+            return app;
+          }));
+
+          // Update graph data with combined total power draw
+          const now = new Date();
+          const timeStr = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+          const newPoint = { time: timeStr, power: Math.round(combinedPower) };
+          
+          const newData = [...powerDataRef.current.slice(1), newPoint];
+          powerDataRef.current = newData;
+          setPowerData(newData);
+          
         } catch (e) {
           console.error("Failed to parse telemetry:", e);
         }
