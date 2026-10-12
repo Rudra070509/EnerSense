@@ -202,7 +202,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="wrapped-card-subvalue" style={{ color: '#10b981', fontSize: '13px', marginTop: '14px', background: 'rgba(16, 185, 129, 0.1)', padding: '6px 12px', borderRadius: '6px', width: 'fit-content', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <TrendingDown size={14} />
-                  Est. {billPrediction.projectedMonthlyKwh} kWh / month (Tier {billPrediction.slabTier})
+                  MERC FY25 • {billPrediction.projectedMonthlyKwh} kWh ({billPrediction.slabTier.split(' ')[0]})
                 </div>
               </div>
             </GlassCard>
@@ -358,36 +358,54 @@ export default function DashboardPage() {
             </div>
 
             <div style={{ background: 'rgba(236, 72, 153, 0.1)', border: '1px solid rgba(236, 72, 153, 0.3)', borderRadius: '16px', padding: '16px', marginBottom: '20px', textAlign: 'center' }}>
-              <div style={{ fontSize: '13px', color: '#ec4899', fontWeight: 'bold' }}>PROJECTED 30-DAY TOTAL</div>
+              <div style={{ fontSize: '12px', color: '#ec4899', fontWeight: 'bold', letterSpacing: '0.5px' }}>PROJECTED 30-DAY MONTHLY BILL</div>
               <div style={{ fontSize: '42px', fontWeight: 'bold', color: '#fff', margin: '4px 0' }}>
                 ₹{billPrediction.predictedBill.toLocaleString('en-IN')}
               </div>
               <div style={{ fontSize: '12px', color: '#94a3b8' }}>
-                Based on current {livePower}W load & {liveEnergy} kWh accumulated
+                Effective Rate: <strong style={{ color: '#38bdf8' }}>₹{billPrediction.effectiveUnitRate} / kWh</strong> (MERC FY 2024-25)
               </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '14px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <span style={{ color: '#94a3b8' }}>Projected Monthly Units:</span>
-                <span style={{ fontWeight: 'bold' }}>{billPrediction.projectedMonthlyKwh} kWh</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <span style={{ color: '#94a3b8' }}>Projected Consumption:</span>
+                <span style={{ fontWeight: 'bold' }}>{billPrediction.projectedMonthlyKwh} kWh / month</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                 <span style={{ color: '#94a3b8' }}>Tariff Slab Tier:</span>
-                <span style={{ fontWeight: 'bold', color: '#38bdf8' }}>Tier {billPrediction.slabTier} (Discom Slab)</span>
+                <span style={{ fontWeight: 'bold', color: '#38bdf8' }}>LT-I(B) {billPrediction.slabTier}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <span style={{ color: '#94a3b8' }}>Base Energy Charges:</span>
-                <span>₹{billPrediction.baseEnergyCost}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <span style={{ color: '#94a3b8' }}>Energy Charges (EC):</span>
+                <span>₹{billPrediction.energyCharges}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <span style={{ color: '#94a3b8' }}>State Electricity Duty (9%):</span>
-                <span>₹{billPrediction.dutyCharge}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <span style={{ color: '#94a3b8' }}>Wheeling Charges (@ ₹2.60/u):</span>
+                <span>₹{billPrediction.wheelingCharges}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <span style={{ color: '#94a3b8' }}>Fixed Meter Charges:</span>
-                <span>₹{billPrediction.fixedCharge}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <span style={{ color: '#94a3b8' }}>Fixed Demand Charges:</span>
+                <span>₹{billPrediction.fixedCharges} / mo</span>
               </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <span style={{ color: '#94a3b8' }}>Fuel Adjustment Cost (FAC):</span>
+                <span>₹{billPrediction.facCharges}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <span style={{ color: '#94a3b8' }}>Electricity Duty (16% State Levy):</span>
+                <span>₹{billPrediction.electricityDuty}</span>
+              </div>
+              {billPrediction.tod && (
+                <div style={{ background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.2)', padding: '8px 12px', borderRadius: '10px', marginTop: '4px' }}>
+                  <div style={{ color: '#38bdf8', fontWeight: 'bold', fontSize: '12px' }}>
+                    {billPrediction.tod.badge}
+                  </div>
+                  <div style={{ color: '#94a3b8', fontSize: '11px', marginTop: '2px' }}>
+                    {billPrediction.tod.tip}
+                  </div>
+                </div>
+              )}
             </div>
 
             <button 
