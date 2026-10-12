@@ -105,62 +105,53 @@ export default function DashboardPage() {
 
   return (
     <div className="dashboard-layout">
-      {/* Top Header */}
-      <header className="dashboard-header">
-        <div className="header-left">
-          <div className="logo-container" style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>
-            <span className="logo-text">Ener<span className="text-primary">Sense</span></span>
-          </div>
-          
-          <div className="header-center">
-            <GlassSurface 
-              borderRadius={100} 
-              blur={12} 
-              opacity={0.08}
-              brightness={1.05}
-              style={{ padding: '4px' }}
-            >
-              <nav className="dashboard-nav-pills">
-                <button 
-                  className={`nav-pill-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
-                  onClick={() => { setActiveTab('dashboard'); navigate('/dashboard'); }}
-                >
-                  <LayoutDashboard size={16} />
-                  <span>Dashboard</span>
-                </button>
-                <button 
-                  className={`nav-pill-btn ${activeTab === 'appliances' ? 'active' : ''}`}
-                  onClick={() => { setActiveTab('appliances'); navigate('/appliances'); }}
-                >
-                  <Cpu size={16} />
-                  <span>Appliances</span>
-                </button>
-                <button 
-                  className={`nav-pill-btn ${activeTab === 'graphs' ? 'active' : ''}`}
-                  onClick={() => { setActiveTab('graphs'); navigate('/graphs'); }}
-                >
-                  <LineChartIcon size={16} />
-                  <span>Live Graphs</span>
-                </button>
-              </nav>
-            </GlassSurface>
-          </div>
-        </div>
+      {/* Absolute Logo Top Left */}
+      <div style={{ position: 'fixed', top: '0px', left: '56px', zIndex: 101 }}>
+        <img src="/assets/enersense_logo.png" alt="EnerSense" style={{ height: '112px', filter: 'brightness(0) invert(1)' }} />
+      </div>
 
-        <div className="header-right">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '6px 14px', borderRadius: '100px', fontSize: '13px', color: '#10b981', fontWeight: 'bold' }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', display: 'inline-block', boxShadow: '0 0 8px #10b981' }}></span>
-            {liveVoltage > 0 ? `${liveVoltage}V LIVE` : '239V LIVE'}
-          </div>
+      {/* Top Navigation */}
+      <div style={{ position: 'fixed', top: 24, left: '50%', transform: 'translateX(-50%)', width: 'auto', zIndex: 100 }}>
+        <GlassSurface 
+          width="auto" 
+          height={72} 
+          borderRadius={100} 
+          borderWidth={0.03}
+          brightness={70} 
+          opacity={0.8} 
+          blur={16} 
+          displace={5} 
+          backgroundOpacity={0.05} 
+          saturation={1.2}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 32px' }}>
+            {/* Nav Links */}
+            <nav style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+              <button className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')} style={{ padding: '8px 16px', whiteSpace: 'nowrap', color: '#fff' }}>
+                <LayoutDashboard size={18} />
+                <span>Dashboard</span>
+              </button>
+              <button className={`nav-item ${activeTab === 'appliances' ? 'active' : ''}`} onClick={() => navigate('/appliances')} style={{ padding: '8px 16px', whiteSpace: 'nowrap', color: '#fff' }}>
+                <Cpu size={18} />
+                <span>Appliances</span>
+              </button>
+              <button className={`nav-item ${activeTab === 'graphs' ? 'active' : ''}`} onClick={() => navigate('/graphs')} style={{ padding: '8px 16px', whiteSpace: 'nowrap', color: '#fff' }}>
+                <LineChartIcon size={18} />
+                <span>Energy Graphs</span>
+              </button>
+              <button className="nav-item" onClick={() => navigate('/alerts')} style={{ padding: '8px 16px', whiteSpace: 'nowrap', color: '#fff' }}>
+                <Bell size={18} />
+                <span>Alerts</span>
+              </button>
 
-          <button className="icon-btn" onClick={() => alert('All hardware sensors running normally!')}>
-            <Bell size={18} />
-          </button>
-          <div className="user-avatar" onClick={() => navigate('/profile')} style={{ cursor: 'pointer' }}>
-            <span>{userInitial}</span>
+              {/* Profile */}
+              <div onClick={() => navigate('/profile')} style={{ width: 36, height: 36, minWidth: 36, minHeight: 36, flexShrink: 0, borderRadius: '50%', background: '#cd1f59', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold', marginLeft: '12px', cursor: 'pointer', transition: 'transform 0.2s ease, box-shadow 0.2s ease' }} onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.1)'; e.currentTarget.style.boxShadow = '0 0 16px rgba(205,31,89,0.5)'; }} onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}>
+                {userInitial}
+              </div>
+            </nav>
           </div>
-        </div>
-      </header>
+        </GlassSurface>
+      </div>
 
       {/* Main Content Area */}
       <main className="dashboard-main">
