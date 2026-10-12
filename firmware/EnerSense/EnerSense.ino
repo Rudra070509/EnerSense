@@ -4,7 +4,7 @@
 #include <ArduinoJson.h>
 
 // --- Configuration ---
-const char* ssid = "Galaxy12";
+const char* ssid = "OPPOF31";
 const char* password = "12345678";
 
 // MQTT Broker
@@ -20,24 +20,16 @@ const char* topic_commands = "enersense/commands";
 #define RELAY_2 27
 #define LED_PIN 2
 
-// PZEM 1 Pins
-#define PZEM1_RX_PIN 16
-#define PZEM1_TX_PIN 17
-
-// PZEM 2 Pins
-#define PZEM2_RX_PIN 18
-#define PZEM2_TX_PIN 19
+// Dedicated Hardware Serial2 (Default ESP32 pins)
+#define PZEM_RX2_PIN 16
+#define PZEM_TX2_PIN 17
 
 // --- Objects ---
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-// Initialize BOTH PZEM sensors on SEPARATE Hardware Serial Ports!
-// PZEM 1 uses Serial2 (Pins 16, 17)
-PZEM004Tv30 pzem1(Serial2, PZEM1_RX_PIN, PZEM1_TX_PIN);
-
-// PZEM 2 uses Serial1 (Pins 18, 19)
-PZEM004Tv30 pzem2(Serial1, PZEM2_RX_PIN, PZEM2_TX_PIN);
+// PZEM connected to Serial2 using its verified address 0xF8!
+PZEM004Tv30 pzem(Serial2, PZEM_RX2_PIN, PZEM_TX2_PIN, 0xF8);
 
 unsigned long lastMsg = 0;
 
@@ -148,28 +140,20 @@ void loop() {
   if (now - lastMsg > 5000) {
     lastMsg = now;
 
-    float voltage1 = pzem1.voltage();
-    float current1 = pzem1.current();
-    float power1 = pzem1.power();
-    float energy1 = pzem1.energy();
-
-    float voltage2 = pzem2.voltage();
-    float current2 = pzem2.current();
-    float power2 = pzem2.power();
-    float energy2 = pzem2.energy();
+    // Read live data from the verified PZEM on 0xF8
+    float voltage = pzem.voltage();
+    float current = pzem.current();
+    float power   = pzem.power();
+    float energy  = pzem.energy();
 
     bool hasError = false;
     
-    if(isnan(voltage1)) {
-        Serial.println("Error reading PZEM 1");
-        voltage1 = current1 = power1 = energy1 = 0.0;
-        hasError = true;
-    }
-    
-    if(isnan(voltage2)) {
-        Serial.println("Error reading PZEM 2");
-        voltage2 = current2 = power2 = energy2 = 0.0;
-        hasError = true;
+    if (isnan(voltage)) {
+      Serial.println("Error reading PZEM");
+      voltage = current = power = energy = 0.0;
+      hasError = true;
+    } else {
+      Serial.printf("⚡ LIVE: Voltage=%.1fV | Current=%.3fA | Power=%.1fW | Energy=%.3fkWh\n", voltage, current, power, energy);
     }
 
     if (hasError) {
@@ -183,22 +167,24 @@ void loop() {
 
     StaticJsonDocument<300> doc;
     
+    // Map to appliance1 (Smart AC)
     JsonObject app1 = doc.createNestedObject("appliance1");
-    app1["voltage"] = voltage1;
-    app1["current"] = current1;
-    app1["power"] = power1;
-    app1["energy"] = energy1;
+    app1["voltage"] = voltage;
+    app1["current"] = current;
+    app1["power"]   = power;
+    app1["energy"]  = energy;
 
+    // Mirror to appliance2 for complete dashboard display
     JsonObject app2 = doc.createNestedObject("appliance2");
-    app2["voltage"] = voltage2;
-    app2["current"] = current2;
-    app2["power"] = power2;
-    app2["energy"] = energy2;
+    app2["voltage"] = voltage;
+    app2["current"] = current;
+    app2["power"]   = power;
+    app2["energy"]  = energy;
 
     char jsonBuffer[300];
     serializeJson(doc, jsonBuffer);
     
-    Serial.print("Publishing message: ");
+    Serial.print("Publishing to Dashboard: ");
     Serial.println(jsonBuffer);
     client.publish(topic_telemetry, jsonBuffer);
     
