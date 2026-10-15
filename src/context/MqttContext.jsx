@@ -21,15 +21,7 @@ export const MqttProvider = ({ children }) => {
   
   // Real-time bill calculations
   const [todayCost, setTodayCost] = useState('0.00');
-  const [billPrediction, setBillPrediction] = useState({
-    projectedMonthlyKwh: '0.0',
-    estimatedDailyKwh: '0.00',
-    baseEnergyCost: 0,
-    dutyCharge: 0,
-    fixedCharge: 85,
-    predictedBill: 85,
-    slabTier: 1
-  });
+  const [billPrediction, setBillPrediction] = useState(() => calculateMonthlyPrediction(0, 0));
 
   const mqttClientRef = useRef(null);
   const powerDataRef = useRef(powerData);
