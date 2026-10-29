@@ -197,11 +197,15 @@ export default function DashboardPage() {
               
               <div style={{ marginTop: 'auto' }}>
                 <div className="wrapped-card-value" style={{ color: '#ec4899', fontSize: '56px' }}>
-                  ₹{billPrediction.predictedBill.toLocaleString('en-IN')}
+                  ₹{(billPrediction?.predictedBill || 0).toLocaleString('en-IN')}
                 </div>
                 <div className="wrapped-card-subvalue" style={{ color: '#10b981', fontSize: '13px', marginTop: '14px', background: 'rgba(16, 185, 129, 0.1)', padding: '6px 12px', borderRadius: '6px', width: 'fit-content', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <TrendingDown size={14} />
+<<<<<<< HEAD
                   MERC FY25 • {billPrediction.projectedMonthlyKwh} kWh ({String(billPrediction.slabTier || 'Tier 1').split(' ')[0]})
+=======
+                  MERC FY25 • {billPrediction?.projectedMonthlyKwh || '0.0'} kWh ({typeof billPrediction?.slabTier === 'string' ? billPrediction.slabTier.split(' ')[0] : `Tier ${billPrediction?.slabTier || 1}`})
+>>>>>>> e35ed26a4673d5bb8404a569ddcaf20ed976b48a
                 </div>
               </div>
             </GlassCard>
@@ -359,41 +363,41 @@ export default function DashboardPage() {
             <div style={{ background: 'rgba(236, 72, 153, 0.1)', border: '1px solid rgba(236, 72, 153, 0.3)', borderRadius: '16px', padding: '16px', marginBottom: '20px', textAlign: 'center' }}>
               <div style={{ fontSize: '12px', color: '#ec4899', fontWeight: 'bold', letterSpacing: '0.5px' }}>PROJECTED 30-DAY MONTHLY BILL</div>
               <div style={{ fontSize: '42px', fontWeight: 'bold', color: '#fff', margin: '4px 0' }}>
-                ₹{billPrediction.predictedBill.toLocaleString('en-IN')}
+                ₹{(billPrediction?.predictedBill || 0).toLocaleString('en-IN')}
               </div>
               <div style={{ fontSize: '12px', color: '#94a3b8' }}>
-                Effective Rate: <strong style={{ color: '#38bdf8' }}>₹{billPrediction.effectiveUnitRate} / kWh</strong> (MERC FY 2024-25)
+                Effective Rate: <strong style={{ color: '#38bdf8' }}>₹{billPrediction?.effectiveUnitRate || '0.00'} / kWh</strong> (MERC FY 2024-25)
               </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                 <span style={{ color: '#94a3b8' }}>Projected Consumption:</span>
-                <span style={{ fontWeight: 'bold' }}>{billPrediction.projectedMonthlyKwh} kWh / month</span>
+                <span style={{ fontWeight: 'bold' }}>{billPrediction?.projectedMonthlyKwh || '0.0'} kWh / month</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                 <span style={{ color: '#94a3b8' }}>Tariff Slab Tier:</span>
-                <span style={{ fontWeight: 'bold', color: '#38bdf8' }}>LT-I(B) {billPrediction.slabTier}</span>
+                <span style={{ fontWeight: 'bold', color: '#38bdf8' }}>LT-I(B) {billPrediction?.slabTier || '0-100 units'}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                 <span style={{ color: '#94a3b8' }}>Energy Charges (EC):</span>
-                <span>₹{billPrediction.energyCharges}</span>
+                <span>₹{billPrediction?.energyCharges || 0}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                 <span style={{ color: '#94a3b8' }}>Wheeling Charges (@ ₹2.60/u):</span>
-                <span>₹{billPrediction.wheelingCharges}</span>
+                <span>₹{billPrediction?.wheelingCharges || 0}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                 <span style={{ color: '#94a3b8' }}>Fixed Demand Charges:</span>
-                <span>₹{billPrediction.fixedCharges} / mo</span>
+                <span>₹{billPrediction?.fixedCharges || 90} / mo</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                 <span style={{ color: '#94a3b8' }}>Fuel Adjustment Cost (FAC):</span>
-                <span>₹{billPrediction.facCharges}</span>
+                <span>₹{billPrediction?.facCharges || 0}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                 <span style={{ color: '#94a3b8' }}>Electricity Duty (16% State Levy):</span>
-                <span>₹{billPrediction.electricityDuty}</span>
+                <span>₹{billPrediction?.electricityDuty || 0}</span>
               </div>
               {billPrediction.tod && (
                 <div style={{ background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.2)', padding: '8px 12px', borderRadius: '10px', marginTop: '4px' }}>
