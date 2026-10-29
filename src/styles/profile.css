@@ -3,7 +3,7 @@
 .profile-wrapper {
   min-height: 100vh;
   width: 100vw;
-  background: #121212; /* Corresponds to the light grey body in reference */
+  background: transparent; /* Corresponds to the light grey body in reference */
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   overflow-x: hidden;
   color: #e0e0e0;
@@ -13,7 +13,8 @@
 
 /* --- Header Section --- */
 .adv-header-section {
-  background: #1a1a1a; /* Corresponds to the white header background in reference */
+  background: rgba(26, 26, 26, 0.4);
+  backdrop-filter: blur(12px); /* Corresponds to the white header background in reference */
   padding-bottom: 24px;
 }
 
@@ -78,7 +79,8 @@
 
 /* --- Header Section --- */
 .adv-header-section {
-  background: #1a1a1a; /* Corresponds to the white header background in reference */
+  background: rgba(26, 26, 26, 0.4);
+  backdrop-filter: blur(12px); /* Corresponds to the white header background in reference */
   padding-bottom: 24px;
 }
 
@@ -195,7 +197,7 @@
 
 /* --- Body Section --- */
 .adv-body-section {
-  background: #121212; /* Light grey in ref */
+  background: transparent; /* Light grey in ref */
   padding: 40px 0 80px;
 }
 

@@ -12,7 +12,7 @@ const INITIAL_APPLIANCES = [
 
 export const MqttProvider = ({ children }) => {
   const [appliances, setAppliances] = useState(INITIAL_APPLIANCES);
-  const [liveEnergy, setLiveEnergy] = useState('0.000');
+  const [liveEnergy, setLiveEnergy] = useState('0.800');
   const [liveVoltage, setLiveVoltage] = useState(0);
   const [livePower, setLivePower] = useState(0); // Watts
   const [powerData, setPowerData] = useState(
@@ -26,9 +26,9 @@ export const MqttProvider = ({ children }) => {
     estimatedDailyKwh: '0.00',
     baseEnergyCost: 0,
     dutyCharge: 0,
-    fixedCharge: 85,
-    predictedBill: 85,
-    slabTier: 1
+    fixedCharge: 80,
+    predictedBill: 80,
+    slabTier: 'Tier 1 (0-100 units)'
   });
 
   const mqttClientRef = useRef(null);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Phone, Star, ArrowLeft, LogOut, Edit3, Save, X } from 'lucide-react';
+import { Mail, Phone, Star, ArrowLeft, LogOut, Edit3, Save, X, MessageSquare, Globe, Sparkles } from 'lucide-react';
 import Toast from '../components/Toast';
 import '../styles/profile.css';
 

@@ -201,7 +201,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="wrapped-card-subvalue" style={{ color: '#10b981', fontSize: '13px', marginTop: '14px', background: 'rgba(16, 185, 129, 0.1)', padding: '6px 12px', borderRadius: '6px', width: 'fit-content', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <TrendingDown size={14} />
-                  MERC FY25 • {billPrediction.projectedMonthlyKwh} kWh ({billPrediction.slabTier.split(' ')[0]})
+                  MERC FY25 • {billPrediction.projectedMonthlyKwh} kWh ({String(billPrediction.slabTier || 'Tier 1').split(' ')[0]})
                 </div>
               </div>
             </GlassCard>

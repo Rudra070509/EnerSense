@@ -105,7 +105,7 @@ export function calculateProgressiveEnergyCharge(totalKwh) {
  * Computes tiered fixed demand charge based on consumption tier
  */
 export function getFixedChargeForConsumption(monthlyKwh) {
-  if (monthlyKwh <= 100) return 90;
+  if (monthlyKwh <= 100) return 80;
   if (monthlyKwh <= 500) return 135;
   return 160;
 }
@@ -141,15 +141,13 @@ export function calculateMonthlyPrediction(liveEnergyKwh, currentWatts = 0) {
   // Instantaneous run rate (24h continuous draw)
   const runRateDailyKwh = (watts * 24) / 1000;
 
-  // Blended baseline: if test just started (low accumulated kWh),
-  // use run-rate projection. If running steadily, use daily accumulated trend.
-  let estimatedDailyKwh = kwhToday > 0.1 ? kwhToday : Math.max(kwhToday * 2, runRateDailyKwh);
-
-  if (estimatedDailyKwh <= 0.01 && watts > 0) {
+  // Calculate daily projection strictly from actual live sensor readings
+  // If appliances are drawing power, project based on that real wattage; otherwise use actual accumulated kWh
+  let estimatedDailyKwh = 0;
+  if (watts > 0) {
     estimatedDailyKwh = runRateDailyKwh;
-  } else if (estimatedDailyKwh <= 0.01) {
-    // Default Mumbai 2BHK residential baseline (~120 units/month -> 4.0 kWh/day)
-    estimatedDailyKwh = 4.0;
+  } else if (kwhToday > 0) {
+    estimatedDailyKwh = kwhToday;
   }
 
   // 30-Day Monthly Units Forecast
@@ -171,8 +169,8 @@ export function calculateMonthlyPrediction(liveEnergyKwh, currentWatts = 0) {
   const taxableBase = energyCharges + wheelingCharges + fixedCharges;
   const electricityDuty = taxableBase * MAHARASHTRA_TAX_DUTY_PCT;
 
-  // 6. Total Forecasted Bill
-  const totalPredictedBill = energyCharges + wheelingCharges + fixedCharges + facCharges + electricityDuty;
+  // 6. Total Forecasted Bill (includes ₹80 fixed meter fee + usage charges)
+  const totalPredictedBill = (energyCharges + wheelingCharges + fixedCharges + facCharges + electricityDuty);
 
   // Slab tier determination
   let slabTier = '0-100 units (₹3.15 + ₹2.60/u)';
@@ -202,6 +200,6 @@ export function calculateMonthlyPrediction(liveEnergyKwh, currentWatts = 0) {
     slabTier,
     tierNumber,
     tod,
-    effectiveUnitRate: (totalPredictedBill / projectedMonthlyKwh).toFixed(2)
+    effectiveUnitRate: projectedMonthlyKwh > 0 ? (totalPredictedBill / projectedMonthlyKwh).toFixed(2) : '0.00'
   };
 }

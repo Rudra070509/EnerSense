@@ -4,8 +4,8 @@
 #include <ArduinoJson.h>
 
 // --- Configuration ---
-const char* ssid = "OPPOF31";
-const char* password = "12345678";
+const char* ssid = "Rudras Iphone";
+const char* password = "ieatkids";
 
 // MQTT Broker
 const char* mqtt_server = "broker.hivemq.com";
@@ -20,16 +20,21 @@ const char* topic_commands = "enersense/commands";
 #define RELAY_2 27
 #define LED_PIN 2
 
-// Dedicated Hardware Serial2 (Default ESP32 pins)
-#define PZEM_RX2_PIN 16
-#define PZEM_TX2_PIN 17
+// PZEM 1 on Serial2 (Pins 16 & 17)
+#define PZEM1_RX_PIN 16
+#define PZEM1_TX_PIN 17
+
+// PZEM 2 on Serial1 (Pins 18 & 19)
+#define PZEM2_RX_PIN 18
+#define PZEM2_TX_PIN 19
 
 // --- Objects ---
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-// PZEM connected to Serial2 using its verified address 0xF8!
-PZEM004Tv30 pzem(Serial2, PZEM_RX2_PIN, PZEM_TX2_PIN, 0xF8);
+// Pass address 0xF8 to both!
+PZEM004Tv30 pzem1(Serial2, PZEM1_RX_PIN, PZEM1_TX_PIN, 0xF8);
+PZEM004Tv30 pzem2(Serial1, PZEM2_RX_PIN, PZEM2_TX_PIN, 0xF8);
 
 unsigned long lastMsg = 0;
 
@@ -84,8 +89,10 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
   if (applianceId == 1) {
     digitalWrite(RELAY_1, strcmp(state, "ON") == 0 ? LOW : HIGH);
+    Serial.printf("Relay 1 set to %s\n", state);
   } else if (applianceId == 2) {
     digitalWrite(RELAY_2, strcmp(state, "ON") == 0 ? LOW : HIGH);
+    Serial.printf("Relay 2 set to %s\n", state);
   }
 }
 
@@ -117,6 +124,10 @@ void reconnect() {
 void setup() {
   Serial.begin(115200);
 
+  // Initialize HardwareSerial ports explicitly
+  Serial2.begin(9600, SERIAL_8N1, PZEM1_RX_PIN, PZEM1_TX_PIN);
+  Serial1.begin(9600, SERIAL_8N1, PZEM2_RX_PIN, PZEM2_TX_PIN);
+
   pinMode(RELAY_1, OUTPUT);
   pinMode(RELAY_2, OUTPUT);
   pinMode(LED_PIN, OUTPUT);
@@ -137,61 +148,50 @@ void loop() {
   client.loop();
 
   unsigned long now = millis();
-  if (now - lastMsg > 5000) {
+  if (now - lastMsg > 3000) {
     lastMsg = now;
 
-    // Read live data from the verified PZEM on 0xF8
-    float voltage = pzem.voltage();
-    float current = pzem.current();
-    float power   = pzem.power();
-    float energy  = pzem.energy();
+    // --- Read Sensor 1 ---
+    float v1 = pzem1.voltage();
+    float i1 = pzem1.current();
+    float p1 = pzem1.power();
+    float e1 = pzem1.energy();
 
-    bool hasError = false;
-    
-    if (isnan(voltage)) {
-      Serial.println("Error reading PZEM");
-      voltage = current = power = energy = 0.0;
-      hasError = true;
-    } else {
-      Serial.printf("⚡ LIVE: Voltage=%.1fV | Current=%.3fA | Power=%.1fW | Energy=%.3fkWh\n", voltage, current, power, energy);
+    if (isnan(v1)) {
+      v1 = i1 = p1 = e1 = 0.0;
     }
 
-    if (hasError) {
-      for(int i = 0; i < 3; i++) {
-        digitalWrite(LED_PIN, LOW);
-        delay(100);
-        digitalWrite(LED_PIN, HIGH);
-        delay(100);
-      }
+    // --- Read Sensor 2 ---
+    float v2 = pzem2.voltage();
+    float i2 = pzem2.current();
+    float p2 = pzem2.power();
+    float e2 = pzem2.energy();
+
+    if (isnan(v2)) {
+      v2 = i2 = p2 = e2 = 0.0;
     }
+
+    Serial.printf("S1: %.1fV | %.3fA | %.1fW || S2: %.1fV | %.3fA | %.1fW\n", v1, i1, p1, v2, i2, p2);
 
     StaticJsonDocument<300> doc;
     
-    // Map to appliance1 (Smart AC)
+    // Appliance 1 (Smart AC)
     JsonObject app1 = doc.createNestedObject("appliance1");
-    app1["voltage"] = voltage;
-    app1["current"] = current;
-    app1["power"]   = power;
-    app1["energy"]  = energy;
+    app1["voltage"] = v1;
+    app1["current"] = i1;
+    app1["power"]   = p1;
+    app1["energy"]  = e1;
 
-    // Mirror to appliance2 for complete dashboard display
+    // Appliance 2 (OLED TV)
     JsonObject app2 = doc.createNestedObject("appliance2");
-    app2["voltage"] = voltage;
-    app2["current"] = current;
-    app2["power"]   = power;
-    app2["energy"]  = energy;
+    app2["voltage"] = v2;
+    app2["current"] = i2;
+    app2["power"]   = p2;
+    app2["energy"]  = e2;
 
     char jsonBuffer[300];
     serializeJson(doc, jsonBuffer);
     
-    Serial.print("Publishing to Dashboard: ");
-    Serial.println(jsonBuffer);
     client.publish(topic_telemetry, jsonBuffer);
-    
-    if (!hasError) {
-      digitalWrite(LED_PIN, LOW);
-      delay(50);
-      digitalWrite(LED_PIN, HIGH);
-    }
   }
 }
