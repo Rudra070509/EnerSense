@@ -6,12 +6,13 @@ import {
   Cpu, 
   LineChart as LineChartIcon, 
   Sparkles, 
-  Send, 
-  Loader2, 
-  Trash2, 
-  Bell, 
-  Zap, 
-  TrendingDown, 
+  FileText,
+  Send,
+  Loader2,
+  Trash2,
+  Bell,
+  Zap,
+  TrendingDown,
   Info,
   Radio
 } from 'lucide-react';
@@ -54,7 +55,6 @@ export default function DashboardPage() {
   const app1 = appliances.find(a => a.channel === 1) || { name: 'Appliance 1', wattage: 0 };
   const app2 = appliances.find(a => a.channel === 2) || { name: 'Appliance 2', wattage: 0 };
 
-  // If both are 0W, display 0% instead of hardcoded 50/50
   const app1Pct = totalApplianceWatts > 0 ? Math.round((app1.wattage / totalApplianceWatts) * 100) : 0;
   const app2Pct = totalApplianceWatts > 0 ? Math.round((app2.wattage / totalApplianceWatts) * 100) : 0;
 
@@ -79,7 +79,6 @@ export default function DashboardPage() {
         console.warn('Could not fetch weekly energy:', err);
       }
       
-      // Fallback clean zeroed 7-day scale if no past DB records yet
       const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Today'];
       setWeeklyUsageData(days.map((d, i) => ({
         name: d,
@@ -90,7 +89,6 @@ export default function DashboardPage() {
     fetchWeeklyData();
   }, [liveEnergy]);
 
-  // Scroll to bottom of chat
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
@@ -103,7 +101,6 @@ export default function DashboardPage() {
     setChatMessages(prev => [...prev, { role: 'user', text: userMsg }]);
     setIsAiLoading(true);
 
-    // Fetch real summary from DB for AI
     let dbSummary = null;
     try {
       const token = localStorage.getItem('token');
@@ -116,7 +113,7 @@ export default function DashboardPage() {
         }
       }
     } catch (e) {
-      // fallback to live
+      // fallback
     }
 
     const currentDashboardData = {
@@ -149,7 +146,7 @@ export default function DashboardPage() {
         <img src="/assets/enersense_logo.png" alt="EnerSense" style={{ height: '112px', filter: 'brightness(0) invert(1)' }} />
       </div>
 
-      {/* Top Floating Glass Navigation */}
+      {/* Top Floating Glass Navigation Bar */}
       <div style={{ position: 'fixed', top: 24, left: '50%', transform: 'translateX(-50%)', width: 'auto', zIndex: 100 }}>
         <GlassSurface 
           width="auto" 
@@ -166,32 +163,32 @@ export default function DashboardPage() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 32px' }}>
             <nav style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
               <button 
-                className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-                onClick={() => { setActiveTab('dashboard'); navigate('/dashboard'); }}
+                className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} 
+                onClick={() => { setActiveTab('dashboard'); navigate('/dashboard'); }} 
                 style={{ padding: '8px 16px', whiteSpace: 'nowrap', color: '#fff' }}
               >
                 <LayoutDashboard size={18} />
                 <span>Dashboard</span>
               </button>
               <button 
-                className={`nav-item ${activeTab === 'appliances' ? 'active' : ''}`}
-                onClick={() => { setActiveTab('appliances'); navigate('/appliances'); }}
+                className={`nav-item ${activeTab === 'appliances' ? 'active' : ''}`} 
+                onClick={() => { setActiveTab('appliances'); navigate('/appliances'); }} 
                 style={{ padding: '8px 16px', whiteSpace: 'nowrap', color: '#fff' }}
               >
                 <Cpu size={18} />
                 <span>Appliances</span>
               </button>
               <button 
-                className={`nav-item ${activeTab === 'graphs' ? 'active' : ''}`}
-                onClick={() => { setActiveTab('graphs'); navigate('/graphs'); }}
+                className={`nav-item ${activeTab === 'graphs' ? 'active' : ''}`} 
+                onClick={() => { setActiveTab('graphs'); navigate('/graphs'); }} 
                 style={{ padding: '8px 16px', whiteSpace: 'nowrap', color: '#fff' }}
               >
                 <LineChartIcon size={18} />
                 <span>Energy Graphs</span>
               </button>
               <button 
-                className={`nav-item ${activeTab === 'alerts' ? 'active' : ''}`}
-                onClick={() => { setActiveTab('alerts'); navigate('/alerts'); }}
+                className={`nav-item ${activeTab === 'alerts' ? 'active' : ''}`} 
+                onClick={() => { setActiveTab('alerts'); navigate('/alerts'); }} 
                 style={{ padding: '8px 16px', whiteSpace: 'nowrap', color: '#fff' }}
               >
                 <Bell size={18} />
@@ -231,244 +228,189 @@ export default function DashboardPage() {
         {userInitial}
       </div>
 
-      {/* Main Grid Content */}
-      <div className="dashboard-content">
-        <div className="dashboard-grid">
-          
-          {/* CARD 1: POWER CONSUMED TODAY (Purple Gradient) */}
-          <GlassCard colSpan={5} rowSpan={6} variant="purple" style={{ padding: '28px 32px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-              <div className="wrapped-card-title">POWER CONSUMED TODAY</div>
-              <div style={{ 
-                background: isHardwareOnline ? 'rgba(52, 211, 153, 0.2)' : 'rgba(255, 255, 255, 0.1)', 
-                border: isHardwareOnline ? '1px solid rgba(52, 211, 153, 0.4)' : '1px solid rgba(255, 255, 255, 0.2)', 
-                borderRadius: '20px', 
-                padding: '4px 12px', 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '6px', 
-                fontSize: '11px', 
-                fontWeight: '700', 
-                color: isHardwareOnline ? '#34d399' : '#94a3b8' 
-              }}>
-                <Zap size={13} />
-                <span>{livePower} W Draw</span>
-              </div>
-            </div>
-
-            <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', width: '100%' }}>
-              <div>
-                <div className="wrapped-card-value" style={{ fontSize: '72px', letterSpacing: '-2px' }}>
-                  {liveEnergy}
-                </div>
-                <div className="wrapped-card-subvalue" style={{ color: 'rgba(255, 255, 255, 0.6)', marginTop: '2px' }}>
-                  kWh consumed since reset.
-                </div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ color: '#34d399', fontSize: '28px', fontWeight: '800' }}>
-                  ₹{todayCost}
-                </div>
-                <div className="wrapped-card-subvalue" style={{ color: 'rgba(255, 255, 255, 0.5)', marginTop: '2px' }}>
-                  Est. cost today
-                </div>
-              </div>
-            </div>
-          </GlassCard>
-
-          {/* CARD 2: PREDICTED MONTHLY BILL */}
-          <GlassCard 
-            colSpan={3} 
-            rowSpan={6} 
-            variant="black" 
-            style={{ padding: '28px 32px', cursor: 'pointer' }}
-            onClick={() => setShowBillModal(true)}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div className="wrapped-card-title">PREDICTED MONTHLY BILL</div>
-              <span style={{ color: '#ec4899', fontSize: '20px', lineHeight: 1 }}>→</span>
-            </div>
+      {/* Main Wrapped Grid */}
+      <main className="dashboard-main">
+        <div className="wrapped-dashboard-container">
+          <div className="wrapped-grid">
             
-            <div style={{ marginTop: 'auto' }}>
-              <div className="wrapped-card-value" style={{ color: '#ec4899', fontSize: '56px' }}>
-                ₹{(billPrediction?.predictedBill || 80).toLocaleString('en-IN')}
-              </div>
-              <div className="wrapped-card-subvalue" style={{ color: '#10b981', fontSize: '13px', marginTop: '14px', background: 'rgba(16, 185, 129, 0.1)', padding: '6px 12px', borderRadius: '6px', width: 'fit-content', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <TrendingDown size={14} />
-                MERC FY25 • {billPrediction?.projectedMonthlyKwh || '0.0'} kWh ({typeof billPrediction?.slabTier === 'string' ? billPrediction.slabTier.split(' ')[0] : `Tier ${billPrediction?.slabTier || 1}`})
-              </div>
-            </div>
-          </GlassCard>
-
-          {/* CARD 3: AI ASSISTANT (Right Column Full Height) */}
-          <GlassCard colSpan={3} rowSpan={10} variant="white" style={{ borderRadius: '80px', padding: '24px 24px 40px 24px', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <div style={{ 
-                background: '#1a1a1a', 
-                color: '#fff', 
-                padding: '6px 16px', 
-                borderRadius: '20px', 
-                fontSize: '12px', 
-                fontWeight: '700',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}>
-                <Sparkles size={14} color="#ec4899" />
-                <span>EnerSense AI</span>
-              </div>
-              <button 
-                onClick={() => setChatMessages([{ role: 'ai', text: "History cleared! Ask me anything about your power network." }])}
-                style={{ background: 'transparent', border: 'none', color: '#999', cursor: 'pointer', padding: '4px' }}
-                title="Clear Chat"
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
-
-            {/* Chat Messages Log */}
-            <div style={{ 
-              flex: 1, 
-              overflowY: 'auto', 
-              display: 'flex', 
-              flexDirection: 'column', 
-              gap: '12px',
-              paddingRight: '4px',
-              marginBottom: '16px'
-            }}>
-              {chatMessages.map((msg, index) => (
-                <div 
-                  key={index}
-                  style={{
-                    alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                    background: msg.role === 'user' ? '#ec4899' : '#38bdf8',
-                    color: '#ffffff',
-                    padding: '12px 16px',
-                    borderRadius: '16px',
-                    borderBottomRightRadius: msg.role === 'user' ? '4px' : '16px',
-                    borderBottomLeftRadius: msg.role === 'ai' ? '4px' : '16px',
-                    maxWidth: '85%',
-                    fontSize: '13px',
-                    lineHeight: '1.4',
-                    fontWeight: 500,
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
-                  }}
-                >
-                  {msg.text}
-                </div>
-              ))}
-              {isAiLoading && (
-                <div style={{
-                  alignSelf: 'flex-start',
-                  background: '#f0f0f0',
-                  color: '#666',
-                  padding: '10px 16px',
-                  borderRadius: '16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  fontSize: '12px'
+            {/* CARD 1: POWER CONSUMED TODAY (Left Column) */}
+            <GlassCard colSpan={5} rowSpan={6} variant="purple" style={{ padding: '32px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 className="wrapped-card-label" style={{ color: '#ffffff' }}>POWER CONSUMED TODAY</h3>
+                <span style={{ 
+                  background: isHardwareOnline ? 'rgba(56, 189, 248, 0.2)' : 'rgba(0,0,0,0.4)', 
+                  padding: '4px 12px', 
+                  borderRadius: '100px', 
+                  color: isHardwareOnline ? '#38bdf8' : '#94a3b8', 
+                  fontSize: '12px', 
+                  fontWeight: 'bold', 
+                  border: isHardwareOnline ? '1px solid rgba(56, 189, 248, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)' 
                 }}>
-                  <Loader2 size={14} className="animate-spin" />
-                  Analyzing database & telemetry...
+                  ⚡ {livePower} W Draw
+                </span>
+              </div>
+              
+              <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                <div>
+                  <div className="wrapped-card-value" style={{ fontSize: '100px', color: '#ffffff', lineHeight: 1 }}>{liveEnergy}</div>
+                  <div className="wrapped-card-subvalue" style={{ color: '#ffffff', opacity: 0.8, fontSize: '15px', fontWeight: 'normal', marginTop: '8px' }}>
+                    kWh consumed since reset.
+                  </div>
                 </div>
-              )}
-              <div ref={chatEndRef} />
-            </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div className="wrapped-card-value" style={{ fontSize: '32px', color: '#10b981', lineHeight: 1 }}>₹{todayCost}</div>
+                  <div className="wrapped-card-subvalue" style={{ color: '#ffffff', opacity: 0.8, fontSize: '14px', fontWeight: 'normal', marginTop: '8px' }}>
+                    Est. cost today
+                  </div>
+                </div>
+              </div>
+            </GlassCard>
 
-            {/* Chat Input Bar */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              borderRadius: '24px',
-              padding: '6px 12px 6px 16px',
-              gap: '8px'
-            }}>
-              <input 
-                type="text" 
-                placeholder="Ask about your usage, yesterday, or bill..." 
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
-                style={{
-                  border: 'none',
-                  background: 'transparent',
-                  outline: 'none',
-                  flex: 1,
-                  fontSize: '13px',
-                  color: '#1e293b'
-                }}
-              />
-              <button 
-                onClick={handleSendChat}
-                disabled={isAiLoading || !chatInput.trim()}
-                style={{
-                  background: chatInput.trim() ? '#ec4899' : '#e2e8f0',
-                  color: '#ffffff',
-                  border: 'none',
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
+            {/* CARD 2: PREDICTED MONTHLY BILL (Middle Column) */}
+            <GlassCard 
+              colSpan={3} 
+              rowSpan={6} 
+              variant="black" 
+              style={{ padding: '32px', cursor: 'pointer' }}
+              onClick={() => setShowBillModal(true)}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 className="wrapped-card-label" style={{ color: '#ffffff', margin: 0 }}>PREDICTED MONTHLY BILL</h3>
+                <span style={{ color: '#ec4899', fontSize: '20px', lineHeight: 1 }}>→</span>
+              </div>
+              
+              <div style={{ marginTop: 'auto' }}>
+                <div className="wrapped-card-value" style={{ color: '#ec4899', fontSize: '56px' }}>
+                  ₹{(billPrediction?.predictedBill || 80).toLocaleString('en-IN')}
+                </div>
+                <div className="wrapped-card-subvalue" style={{ color: '#10b981', fontSize: '13px', marginTop: '14px', background: 'rgba(16, 185, 129, 0.1)', padding: '6px 12px', borderRadius: '6px', width: 'fit-content', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <TrendingDown size={14} />
+                  MERC FY25 • {billPrediction?.projectedMonthlyKwh || '0.0'} kWh ({typeof billPrediction?.slabTier === 'string' ? billPrediction.slabTier.split(' ')[0] : `Tier ${billPrediction?.slabTier || 1}`})
+                </div>
+              </div>
+            </GlassCard>
+
+            {/* CARD 3: AI ASSISTANT (Right Column Full Height) */}
+            <GlassCard colSpan={4} rowSpan={10} variant="white" style={{ borderRadius: '80px', padding: '24px 24px 40px 24px', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <div style={{ 
+                  background: '#1a1a1a', 
+                  color: '#fff', 
+                  padding: '6px 16px', 
+                  borderRadius: '20px', 
+                  fontSize: '12px', 
+                  fontWeight: 'bold',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: chatInput.trim() ? 'pointer' : 'default',
-                  transition: 'all 0.2s'
-                }}
-              >
-                <Send size={14} />
-              </button>
-            </div>
-          </GlassCard>
-
-          {/* CARD 4: DAILY PROJECTION (Pink Bar Chart) */}
-          <GlassCard colSpan={3} rowSpan={4} variant="pink" style={{ padding: '24px' }}>
-            <div className="wrapped-card-title" style={{ color: '#ffffff', marginBottom: '16px' }}>
-              DAILY USAGE (WH)
-            </div>
-            <div style={{ width: '100%', height: '80px' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={weeklyUsageData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#ffffff', fontSize: 10, fontWeight: 600 }} />
-                  <Tooltip 
-                    cursor={{ fill: 'transparent' }}
-                    content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        return (
-                          <div style={{ background: '#111', color: '#fff', padding: '4px 8px', borderRadius: '4px', fontSize: '10px' }}>
-                            {payload[0].value} Wh
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                  <Bar dataKey="value" fill="#18181b" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </GlassCard>
-
-          {/* CARD 5: LIVE LOAD (Wattage & Real Voltage) */}
-          <GlassCard colSpan={2} rowSpan={4} variant="black" style={{ padding: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div className="wrapped-card-title">LIVE LOAD</div>
-              <div style={{ 
-                fontSize: '11px', 
-                fontWeight: '700', 
-                color: liveVoltage > 0 ? '#34d399' : '#64748b',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}>
-                <Radio size={12} color={liveVoltage > 0 ? '#34d399' : '#64748b'} />
-                {liveVoltage > 0 ? `${liveVoltage} V` : 'Offline'}
+                  gap: '6px'
+                }}>
+                  <Sparkles size={14} color="#ec4899" />
+                  <span>EnerSense AI</span>
+                </div>
+                <button 
+                  onClick={() => setChatMessages([{ role: 'ai', text: "History cleared! Ask me anything about your power network." }])}
+                  style={{ background: 'transparent', border: 'none', color: '#999', cursor: 'pointer', padding: '4px' }}
+                  title="Clear Chat"
+                >
+                  <Trash2 size={16} />
+                </button>
               </div>
-            </div>
-            <div style={{ marginTop: 'auto' }}>
-              <div className="wrapped-card-value" style={{ fontSize: '42px', color: '#ffffff' }}>
+
+              {/* Chat Messages */}
+              <div style={{ 
+                flex: 1, 
+                overflowY: 'auto', 
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: '12px',
+                paddingRight: '4px',
+                marginBottom: '16px'
+              }}>
+                {chatMessages.map((msg, idx) => (
+                  <div key={idx} className={`chat-bubble ${msg.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'}`}>
+                    {msg.text}
+                  </div>
+                ))}
+                {isAiLoading && (
+                  <div className="chat-bubble chat-bubble-ai" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Loader2 size={16} className="animate-spin" />
+                    <span>Analyzing database & telemetry...</span>
+                  </div>
+                )}
+                <div ref={chatEndRef} />
+              </div>
+
+              {/* Input */}
+              <div className="chat-input-wrapper">
+                <input 
+                  type="text" 
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
+                  placeholder="Ask about your usage, yesterday, or bill..."
+                  className="chat-input-field"
+                />
+                <button 
+                  onClick={handleSendChat}
+                  disabled={!chatInput.trim() || isAiLoading}
+                  className={`chat-send-btn ${chatInput.trim() && !isAiLoading ? 'active' : 'disabled'}`}
+                >
+                  <Send size={16} />
+                </button>
+              </div>
+            </GlassCard>
+
+            {/* CARD 4: DAILY PROJECTION (Pink Bar Chart) */}
+            <GlassCard colSpan={3} rowSpan={4} variant="pink" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
+              <h3 className="wrapped-card-label" style={{ color: '#ffffff', textTransform: 'uppercase', fontSize: '12px', marginBottom: '16px', textAlign: 'center' }}>
+                Daily Usage (Wh)
+              </h3>
+              
+              <div style={{ flex: 1, width: '100%', minHeight: 0 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={weeklyUsageData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                    <XAxis 
+                      dataKey="name" 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fill: '#ffffff', fontSize: 10, fontWeight: 500 }}
+                    />
+                    <Tooltip 
+                      cursor={{ fill: 'transparent' }}
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div style={{ background: '#111', color: '#fff', padding: '4px 8px', borderRadius: '4px', fontSize: '10px' }}>
+                              {payload[0].value} Wh
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Bar dataKey="value" fill="#18181b" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </GlassCard>
+
+            {/* CARD 5: LIVE LOAD (Middle Bottom) */}
+            <GlassCard colSpan={2} rowSpan={4} variant="black" style={{ padding: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 className="wrapped-card-label" style={{ color: '#ffffff', textTransform: 'uppercase', fontSize: '12px', margin: 0 }}>LIVE LOAD</h3>
+                <span style={{ 
+                  color: liveVoltage > 0 ? '#10b981' : '#64748b', 
+                  fontSize: '12px', 
+                  fontWeight: 'bold',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}>
+                  <Radio size={12} color={liveVoltage > 0 ? '#10b981' : '#64748b'} />
+                  {liveVoltage > 0 ? `${liveVoltage} V` : 'Offline'}
+                </span>
+              </div>
+              <div className="wrapped-card-value" style={{ color: '#fff', fontSize: '30px', marginTop: '8px' }}>
                 {livePower} W
               </div>
               <div className="wrapped-card-subvalue" style={{ color: '#888', marginTop: '2px' }}>
@@ -480,51 +422,43 @@ export default function DashboardPage() {
                 <div style={{ flex: 1, height: '6px', borderRadius: '3px', background: livePower > 1500 ? '#d97706' : '#222' }}></div>
                 <div style={{ flex: 1, height: '6px', borderRadius: '3px', background: livePower > 2500 ? '#dc2626' : '#222' }}></div>
               </div>
-            </div>
-          </GlassCard>
+            </GlassCard>
 
-          {/* CARD 6: ACTIVE APPLIANCES (Real Percentage Breakdown) */}
-          <GlassCard colSpan={3} rowSpan={4} variant="black" style={{ padding: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <div className="wrapped-card-title" style={{ fontSize: '13px' }}>
-                Active Appliances
+            {/* CARD 6: ACTIVE APPLIANCES (Left Bottom) */}
+            <GlassCard colSpan={3} rowSpan={4} variant="black" style={{ padding: '32px', position: 'relative' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                <h3 className="wrapped-card-label" style={{ color: '#ffffff', margin: 0, textTransform: 'none', fontSize: '20px', fontWeight: 'bold', letterSpacing: '0' }}>Active<br/>Appliances</h3>
+                <span style={{ color: '#64748b', fontSize: '10px', textAlign: 'right' }}>Real PZEM<br/>Breakdown</span>
               </div>
-              <div style={{ fontSize: '10px', color: '#666' }}>Real PZEM Breakdown</div>
-            </div>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '10px' }}>
-              {/* Channel 1 */}
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
-                  <span style={{ color: '#e2e8f0', fontWeight: 600 }}>{app1.name} (Relay 1)</span>
-                  <span style={{ color: '#38bdf8', fontWeight: 700 }}>
-                    {totalApplianceWatts > 0 ? `${app1Pct}%` : 'Standby'}
-                  </span>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '12px' }}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
+                    <span style={{ color: '#e2e8f0', fontWeight: 600 }}>{app1.name} (Relay 1)</span>
+                    <span style={{ color: '#38bdf8', fontWeight: 700 }}>{totalApplianceWatts > 0 ? `${app1Pct}%` : 'Standby'}</span>
+                  </div>
+                  <div style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '4px' }}>{app1.wattage} W</div>
+                  <div style={{ width: '100%', height: '4px', background: '#222', borderRadius: '2px', overflow: 'hidden' }}>
+                    <div style={{ width: `${app1Pct}%`, height: '100%', background: '#38bdf8', transition: 'width 0.4s' }}></div>
+                  </div>
                 </div>
-                <div style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '4px' }}>{app1.wattage} W</div>
-                <div style={{ width: '100%', height: '4px', background: '#222', borderRadius: '2px', overflow: 'hidden' }}>
-                  <div style={{ width: `${app1Pct}%`, height: '100%', background: '#38bdf8', transition: 'width 0.4s' }}></div>
-                </div>
-              </div>
 
-              {/* Channel 2 */}
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
-                  <span style={{ color: '#e2e8f0', fontWeight: 600 }}>{app2.name} (Relay 2)</span>
-                  <span style={{ color: '#c084fc', fontWeight: 700 }}>
-                    {totalApplianceWatts > 0 ? `${app2Pct}%` : 'Standby'}
-                  </span>
-                </div>
-                <div style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '4px' }}>{app2.wattage} W</div>
-                <div style={{ width: '100%', height: '4px', background: '#222', borderRadius: '2px', overflow: 'hidden' }}>
-                  <div style={{ width: `${app2Pct}%`, height: '100%', background: '#c084fc', transition: 'width 0.4s' }}></div>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
+                    <span style={{ color: '#e2e8f0', fontWeight: 600 }}>{app2.name} (Relay 2)</span>
+                    <span style={{ color: '#c084fc', fontWeight: 700 }}>{totalApplianceWatts > 0 ? `${app2Pct}%` : 'Standby'}</span>
+                  </div>
+                  <div style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '4px' }}>{app2.wattage} W</div>
+                  <div style={{ width: '100%', height: '4px', background: '#222', borderRadius: '2px', overflow: 'hidden' }}>
+                    <div style={{ width: `${app2Pct}%`, height: '100%', background: '#c084fc', transition: 'width 0.4s' }}></div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </GlassCard>
+            </GlassCard>
 
+          </div>
         </div>
-      </div>
+      </main>
 
       {/* Bill Breakdown Modal */}
       {showBillModal && (
