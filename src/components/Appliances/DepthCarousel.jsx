@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import ApplianceCard from './ApplianceCard';
 
-export default function DepthCarousel({ appliances, onToggleAppliance }) {
+export default function DepthCarousel({ appliances, onToggleAppliance, onRenameAppliance }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [dragStartX, setDragStartX] = useState(null);
   const total = appliances.length;
@@ -26,8 +26,6 @@ export default function DepthCarousel({ appliances, onToggleAppliance }) {
     }
     
     const diff = dragStartX - endX;
-    
-    // threshold for swipe
     if (diff > 50) {
       nextItem();
     } else if (diff < -50) {
@@ -38,12 +36,18 @@ export default function DepthCarousel({ appliances, onToggleAppliance }) {
   };
 
   const nextItem = () => {
+    if (total === 0) return;
     setActiveIndex(prev => (prev + 1) % total);
   };
 
   const prevItem = () => {
+    if (total === 0) return;
     setActiveIndex(prev => (prev - 1 + total) % total);
   };
+
+  if (total === 0) {
+    return <div style={{ color: '#fff', textAlign: 'center', marginTop: '100px' }}>Loading appliances...</div>;
+  }
 
   return (
     <div 
@@ -54,49 +58,60 @@ export default function DepthCarousel({ appliances, onToggleAppliance }) {
       onTouchStart={handleDragStart}
       onTouchEnd={handleDragEnd}
     >
-      <button className="carousel-nav-btn prev" onClick={(e) => { e.stopPropagation(); prevItem(); }}>
-        <ChevronLeft size={28} />
-      </button>
+      {total > 1 && (
+        <button className="carousel-nav-btn prev" onClick={(e) => { e.stopPropagation(); prevItem(); }}>
+          <ChevronLeft size={28} />
+        </button>
+      )}
 
       <div className="carousel-track" style={{ perspective: '1200px' }}>
         {appliances.map((app, i) => {
-          // Calculate shortest distance in a circular array
           let dist = i - activeIndex;
-          if (dist > total / 2) dist -= total;
-          if (dist < -total / 2) dist += total;
+          if (total > 2) {
+            if (dist > total / 2) dist -= total;
+            if (dist < -total / 2) dist += total;
+          }
           
           const absDist = Math.abs(dist);
           const sign = Math.sign(dist);
           const isActive = dist === 0;
 
-          // Stack items behind each other (to the left and right)
-          // Increased offset for larger cards
-          const translateX = sign * 180 * absDist;
-          const translateZ = -150 * absDist;
-          const rotateY = -sign * 25; // face inwards
-          const scale = Math.max(1 - (absDist * 0.1), 0.5);
+          const tx = dist * 280;
+          const tz = -absDist * 160;
+          const ry = -sign * Math.min(absDist * 22, 45);
+          const opacity = Math.max(1 - absDist * 0.35, 0.2);
+          const zIndex = 100 - absDist;
 
           return (
-            <div 
-              key={app.id} 
-              className="carousel-item"
+            <div
+              key={app.id || app.channel || i}
+              className={`carousel-card-wrap ${isActive ? 'active' : ''}`}
               style={{
-                transform: `translateX(${translateX}px) translateZ(${translateZ}px) rotateY(${rotateY}deg) scale(${scale})`,
-                opacity: absDist > 2 ? 0 : (1 - absDist * 0.2), // Fade out items far away
-                filter: isActive ? 'none' : 'blur(2px) brightness(0.5)',
-                pointerEvents: isActive ? 'auto' : 'none',
-                zIndex: 100 - absDist, // Ensure center is always on top
+                transform: `translateX(${tx}px) translateZ(${tz}px) rotateY(${ry}deg)`,
+                opacity: opacity,
+                zIndex: zIndex,
+                transition: 'all 0.4s cubic-bezier(0.25, 1, 0.5, 1)',
+                cursor: isActive ? 'default' : 'pointer',
+              }}
+              onClick={() => {
+                if (!isActive) setActiveIndex(i);
               }}
             >
-              <ApplianceCard appliance={app} onToggle={onToggleAppliance} />
+              <ApplianceCard 
+                appliance={app} 
+                onToggle={onToggleAppliance} 
+                onRename={onRenameAppliance}
+              />
             </div>
           );
         })}
       </div>
 
-      <button className="carousel-nav-btn next" onClick={(e) => { e.stopPropagation(); nextItem(); }}>
-        <ChevronRight size={28} />
-      </button>
+      {total > 1 && (
+        <button className="carousel-nav-btn next" onClick={(e) => { e.stopPropagation(); nextItem(); }}>
+          <ChevronRight size={28} />
+        </button>
+      )}
     </div>
   );
 }

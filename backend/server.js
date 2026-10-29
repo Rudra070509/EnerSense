@@ -1,8 +1,8 @@
 /**
  * EnerSense Backend API Server
  * 
- * This Express server handles all authentication (local + Google),
- * password resets via email OTP, profile management, and database initialization.
+ * Handles authentication, profile management, appliance management,
+ * energy logging & history, and Gemini AI contextual analysis.
  */
 
 const express = require('express');
@@ -12,9 +12,10 @@ const jwt = require('jsonwebtoken');
 const path = require('path');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const mqtt = require('mqtt');
 const { OAuth2Client } = require('google-auth-library');
 
-// Load environment variables from the parent directory's .env file
+// Load environment variables
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 const pool = require('./db');
@@ -38,10 +39,10 @@ const transporter = nodemailer.createTransport({
 app.use(cors());
 app.use(express.json());
 
-// Initialize Database Table
+// Initialize Database Tables
 const initDB = async () => {
   try {
-    // Create users table if it doesn't exist
+    // 1. Users table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -53,19 +54,138 @@ const initDB = async () => {
       )
     `);
     
-    // Modify table to support Google Auth and Password Resets
     await pool.query(`ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL`);
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id VARCHAR(255) UNIQUE`);
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token VARCHAR(255)`);
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token_expiry TIMESTAMP`);
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(50)`);
 
-    console.log('Database initialized successfully.');
+    // 2. User Appliances table (Personalized per user, starts as Appliance 1 & Appliance 2)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS user_appliances (
+        id SERIAL PRIMARY KEY,
+        user_id INT REFERENCES users(id) ON DELETE CASCADE,
+        channel INT NOT NULL,
+        name VARCHAR(100) NOT NULL,
+        room VARCHAR(100) DEFAULT 'Living Room',
+        type VARCHAR(50) DEFAULT 'light',
+        image VARCHAR(255) DEFAULT '/assets/appliance_card1.jpg',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT unique_user_channel UNIQUE (user_id, channel)
+      )
+    `);
+
+    // 3. Energy Logs table (Continuous history for charts, daily reset, billing & AI)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS energy_logs (
+        id SERIAL PRIMARY KEY,
+        user_id INT REFERENCES users(id) ON DELETE CASCADE,
+        voltage FLOAT DEFAULT 0,
+        current FLOAT DEFAULT 0,
+        power FLOAT DEFAULT 0,
+        energy_kwh FLOAT DEFAULT 0,
+        app1_power FLOAT DEFAULT 0,
+        app2_power FLOAT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Index for fast date queries
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_energy_logs_user_date 
+      ON energy_logs (user_id, created_at DESC)
+    `);
+
+    console.log('Database initialized successfully with energy_logs and user_appliances.');
   } catch (err) {
-    console.error('Failed to initialize database. Make sure DATABASE_URL is correct.', err.message);
+    console.error('Failed to initialize database:', err.message);
   }
 };
 initDB();
+
+// Helper to ensure default appliances exist for a user
+const ensureUserAppliances = async (userId) => {
+  try {
+    const existing = await pool.query('SELECT * FROM user_appliances WHERE user_id = $1 ORDER BY channel ASC', [userId]);
+    if (existing.rows.length === 0) {
+      await pool.query(`
+        INSERT INTO user_appliances (user_id, channel, name, room, type, image)
+        VALUES 
+          ($1, 1, 'Appliance 1', 'Living Room', 'light', '/assets/appliance_card1.jpg'),
+          ($1, 2, 'Appliance 2', 'Living Room', 'tv', '/assets/appliance_card2.jpg')
+      `, [userId]);
+      const res = await pool.query('SELECT * FROM user_appliances WHERE user_id = $1 ORDER BY channel ASC', [userId]);
+      return res.rows;
+    }
+    return existing.rows;
+  } catch (e) {
+    console.error('Error ensuring user appliances:', e);
+    return [];
+  }
+};
+
+// --- Background MQTT Telemetry Ingestion ---
+// Records real-time snapshots into PostgreSQL for active users
+let latestTelemetry = null;
+const mqttClient = mqtt.connect('mqtt://broker.hivemq.com:1883');
+
+mqttClient.on('connect', () => {
+  console.log('Backend connected to MQTT broker (broker.hivemq.com:1883)');
+  mqttClient.subscribe('enersense/telemetry');
+});
+
+mqttClient.on('message', (topic, message) => {
+  if (topic === 'enersense/telemetry') {
+    try {
+      latestTelemetry = JSON.parse(message.toString());
+    } catch (e) {
+      // ignore parse err
+    }
+  }
+});
+
+// Save snapshot to database every 30 seconds if live readings exist
+setInterval(async () => {
+  if (!latestTelemetry) return;
+  try {
+    // For local prototype demonstration, associate with the most recently active or first user
+    const usersRes = await pool.query('SELECT id FROM users ORDER BY id ASC LIMIT 5');
+    if (usersRes.rows.length === 0) return;
+
+    const v1 = latestTelemetry.appliance1?.voltage || latestTelemetry.appliance2?.voltage || 0;
+    const p1 = latestTelemetry.appliance1?.power || 0;
+    const p2 = latestTelemetry.appliance2?.power || 0;
+    const totalPower = p1 + p2;
+    const totalEnergy = (latestTelemetry.appliance1?.energy || 0) + (latestTelemetry.appliance2?.energy || 0);
+    const c1 = latestTelemetry.appliance1?.current || 0;
+
+    // Only log if voltage > 0 (meaning hardware is actively connected)
+    if (v1 > 0) {
+      for (const u of usersRes.rows) {
+        await pool.query(`
+          INSERT INTO energy_logs (user_id, voltage, current, power, energy_kwh, app1_power, app2_power)
+          VALUES ($1, $2, $3, $4, $5, $6, $7)
+        `, [u.id, v1, c1, totalPower, totalEnergy, p1, p2]);
+      }
+    }
+  } catch (err) {
+    console.error('Failed to log telemetry snapshot to DB:', err.message);
+  }
+}, 30000);
+
+// --- Auth Middleware ---
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  
+  if (!token) return res.status(401).json({ error: 'Access denied. No token provided.' });
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ error: 'Invalid or expired token.' });
+    req.user = user;
+    next();
+  });
+};
 
 // --- Auth Routes ---
 
@@ -74,23 +194,23 @@ app.post('/api/auth/signup', async (req, res) => {
   try {
     const { firstName, lastName, email, password } = req.body;
 
-    // Check if user already exists
     const userCheck = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     if (userCheck.rows.length > 0) {
       return res.status(400).json({ error: 'User with this email already exists.' });
     }
 
-    // Hash the password
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
-    // Insert user into database
     const newUser = await pool.query(
       'INSERT INTO users (first_name, last_name, email, password_hash) VALUES ($1, $2, $3, $4) RETURNING id, first_name, last_name, email',
       [firstName, lastName, email, passwordHash]
     );
 
-    res.status(201).json({ message: 'User created successfully.', user: newUser.rows[0] });
+    const user = newUser.rows[0];
+    await ensureUserAppliances(user.id);
+
+    res.status(201).json({ message: 'User created successfully.', user });
   } catch (err) {
     console.error('Signup error:', err);
     res.status(500).json({ error: 'Internal server error.' });
@@ -102,7 +222,6 @@ app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Find the user by email
     const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     if (userResult.rows.length === 0) {
       return res.status(401).json({ error: 'Invalid email or password.' });
@@ -110,17 +229,17 @@ app.post('/api/auth/login', async (req, res) => {
 
     const user = userResult.rows[0];
 
-    // Compare passwords
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
       return res.status(401).json({ error: 'Invalid email or password.' });
     }
 
-    // Generate JWT token
+    await ensureUserAppliances(user.id);
+
     const token = jwt.sign(
       { userId: user.id, email: user.email },
       JWT_SECRET,
-      { expiresIn: '24h' }
+      { expiresIn: '7d' }
     );
 
     res.status(200).json({
@@ -130,7 +249,8 @@ app.post('/api/auth/login', async (req, res) => {
         id: user.id,
         firstName: user.first_name,
         lastName: user.last_name,
-        email: user.email
+        email: user.email,
+        phone: user.phone
       }
     });
   } catch (err) {
@@ -139,165 +259,61 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// 3. Google OAuth Route
+// 3. Google OAuth Login/Signup
 app.post('/api/auth/google', async (req, res) => {
   try {
-    const { token } = req.body;
-    
-    // Verify the token with Google
+    const { credential } = req.body;
+
     const ticket = await oauthClient.verifyIdToken({
-      idToken: token,
+      idToken: credential,
       audience: GOOGLE_CLIENT_ID
     });
-    
+
     const payload = ticket.getPayload();
     const { sub: googleId, email, given_name: firstName, family_name: lastName } = payload;
-    
-    // Check if user exists by email or google_id
-    const userCheck = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+
+    let userResult = await pool.query('SELECT * FROM users WHERE google_id = $1 OR email = $2', [googleId, email]);
     let user;
-    
-    if (userCheck.rows.length > 0) {
-      // User exists, just log them in (and update google_id if missing)
-      user = userCheck.rows[0];
+
+    if (userResult.rows.length === 0) {
+      const newUser = await pool.query(
+        'INSERT INTO users (first_name, last_name, email, google_id) VALUES ($1, $2, $3, $4) RETURNING *',
+        [firstName, lastName, email, googleId]
+      );
+      user = newUser.rows[0];
+    } else {
+      user = userResult.rows[0];
       if (!user.google_id) {
         await pool.query('UPDATE users SET google_id = $1 WHERE id = $2', [googleId, user.id]);
       }
-    } else {
-      // Create new user without a password
-      const newUser = await pool.query(
-        'INSERT INTO users (first_name, last_name, email, google_id) VALUES ($1, $2, $3, $4) RETURNING *',
-        [firstName, lastName || '', email, googleId]
-      );
-      user = newUser.rows[0];
     }
-    
-    // Generate JWT token
-    const jwtToken = jwt.sign(
+
+    await ensureUserAppliances(user.id);
+
+    const token = jwt.sign(
       { userId: user.id, email: user.email },
       JWT_SECRET,
-      { expiresIn: '24h' }
+      { expiresIn: '7d' }
     );
-    
+
     res.status(200).json({
       message: 'Google login successful.',
-      token: jwtToken,
+      token,
       user: {
         id: user.id,
         firstName: user.first_name,
         lastName: user.last_name,
-        email: user.email
+        email: user.email,
+        phone: user.phone
       }
     });
   } catch (err) {
-    console.error('Google Auth error:', err);
-    res.status(401).json({ error: 'Invalid Google token.' });
+    console.error('Google Auth Error:', err);
+    res.status(500).json({ error: 'Google authentication failed.' });
   }
 });
 
-// 4. Forgot Password Route
-app.post('/api/auth/forgot-password', async (req, res) => {
-  try {
-    const { email } = req.body;
-    
-    // Check if user exists
-    const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-    if (userResult.rows.length === 0) {
-      // Return 200 even if not found to prevent email enumeration
-      return res.status(200).json({ message: 'If the email exists, a reset link was sent.' });
-    }
-
-    const user = userResult.rows[0];
-
-    // Check if user is purely a Google login user (they shouldn't have passwords)
-    if (!user.password_hash && user.google_id) {
-      return res.status(400).json({ error: 'This account uses Google Sign-In. Please log in with Google.' });
-    }
-
-    // Generate 6-digit OTP and expiry (1 hour)
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-
-    // Save to DB
-    await pool.query(
-      'UPDATE users SET reset_token = $1, reset_token_expiry = $2 WHERE id = $3',
-      [otp, expiry, user.id]
-    );
-
-    // Send Email
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: 'EnerSense - Password Reset OTP',
-      html: `
-        <h2>EnerSense Password Reset</h2>
-        <p>You requested a password reset. Please enter the following 6-digit OTP on the website to reset your password:</p>
-        <h1 style="font-size: 32px; letter-spacing: 5px; color: #3b82f6;">${otp}</h1>
-        <p style="margin-top: 20px; font-size: 12px; color: #666;">If you didn't request this, you can safely ignore this email. This OTP expires in 1 hour.</p>
-      `
-    };
-
-    await transporter.sendMail(mailOptions);
-    console.log(`Reset email sent to ${email}`);
-
-    res.status(200).json({ message: 'If the email exists, a reset link was sent.' });
-  } catch (err) {
-    console.error('Forgot password error:', err);
-    res.status(500).json({ error: 'Internal server error.' });
-  }
-});
-
-// 5. Reset Password Route (with OTP)
-app.post('/api/auth/reset-password', async (req, res) => {
-  try {
-    const { email, otp, newPassword } = req.body;
-
-    // Find user by valid OTP and email
-    const userResult = await pool.query(
-      'SELECT * FROM users WHERE email = $1 AND reset_token = $2 AND reset_token_expiry > NOW()',
-      [email, otp]
-    );
-
-    if (userResult.rows.length === 0) {
-      return res.status(400).json({ error: 'Invalid or expired OTP.' });
-    }
-
-    const user = userResult.rows[0];
-
-    // Hash new password
-    const saltRounds = 10;
-    const passwordHash = await bcrypt.hash(newPassword, saltRounds);
-
-    // Update DB and clear token
-    await pool.query(
-      'UPDATE users SET password_hash = $1, reset_token = NULL, reset_token_expiry = NULL WHERE id = $2',
-      [passwordHash, user.id]
-    );
-
-    res.status(200).json({ message: 'Password has been reset successfully. You can now log in.' });
-  } catch (err) {
-    console.error('Reset password error:', err);
-    res.status(500).json({ error: 'Internal server error.' });
-  }
-});
-
-// --- Protected Routes ---
-
-// JWT Authentication Middleware
-const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // "Bearer TOKEN"
-  
-  if (!token) return res.status(401).json({ error: 'Access denied. No token provided.' });
-
-  jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) return res.status(403).json({ error: 'Invalid or expired token.' });
-    req.user = user; // attach decoded user info (userId, email) to req
-    next();
-  });
-};
-
-// 6. Get User Profile
+// --- User Profile Routes ---
 app.get('/api/user/profile', authenticateToken, async (req, res) => {
   try {
     const userResult = await pool.query(
@@ -316,7 +332,6 @@ app.get('/api/user/profile', authenticateToken, async (req, res) => {
   }
 });
 
-// 7. Update User Profile
 app.put('/api/user/profile', authenticateToken, async (req, res) => {
   try {
     const { firstName, lastName, phone } = req.body;
@@ -333,7 +348,150 @@ app.put('/api/user/profile', authenticateToken, async (req, res) => {
   }
 });
 
+// --- Dynamic Appliances Routes ---
+
+// 1. Get Logged-in User's Appliances
+app.get('/api/appliances', authenticateToken, async (req, res) => {
+  try {
+    const apps = await ensureUserAppliances(req.user.userId);
+    res.status(200).json(apps);
+  } catch (err) {
+    console.error('Error fetching appliances:', err);
+    res.status(500).json({ error: 'Failed to fetch appliances.' });
+  }
+});
+
+// 2. Rename / Update User's Appliance
+app.put('/api/appliances/:channel', authenticateToken, async (req, res) => {
+  try {
+    const channel = parseInt(req.params.channel, 10);
+    const { name, room, type, image } = req.body;
+
+    const updated = await pool.query(`
+      UPDATE user_appliances 
+      SET 
+        name = COALESCE($1, name),
+        room = COALESCE($2, room),
+        type = COALESCE($3, type),
+        image = COALESCE($4, image)
+      WHERE user_id = $5 AND channel = $6
+      RETURNING *
+    `, [name, room, type, image, req.user.userId, channel]);
+
+    if (updated.rows.length === 0) {
+      return res.status(404).json({ error: 'Appliance not found.' });
+    }
+
+    res.status(200).json({ message: 'Appliance updated successfully.', appliance: updated.rows[0] });
+  } catch (err) {
+    console.error('Error updating appliance:', err);
+    res.status(500).json({ error: 'Failed to update appliance.' });
+  }
+});
+
+// --- Energy History & Stats Routes ---
+
+// 1. Get Today's Energy & Cost (Clean daily reset based on today's midnight)
+app.get('/api/energy/today', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        COALESCE(MAX(energy_kwh) - MIN(energy_kwh), 0) as today_kwh,
+        COALESCE(AVG(power), 0) as avg_power,
+        COALESCE(MAX(power), 0) as peak_power,
+        COUNT(*) as log_count
+      FROM energy_logs
+      WHERE user_id = $1 AND created_at >= CURRENT_DATE
+    `, [req.user.userId]);
+
+    const row = result.rows[0] || {};
+    res.status(200).json({
+      todayKwh: parseFloat(row.today_kwh || 0).toFixed(3),
+      avgPower: Math.round(row.avg_power || 0),
+      peakPower: Math.round(row.peak_power || 0),
+      hasLogsToday: parseInt(row.log_count || 0) > 0
+    });
+  } catch (err) {
+    console.error('Error fetching today energy:', err);
+    res.status(500).json({ error: 'Failed to fetch today energy.' });
+  }
+});
+
+// 2. Get Weekly 7-Day Usage (Real Mon-Sun bars from database)
+app.get('/api/energy/weekly', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        TO_CHAR(d.day, 'Dy') as name,
+        d.day::date as date,
+        COALESCE(MAX(e.energy_kwh) - MIN(e.energy_kwh), 0) as kwh,
+        COALESCE(AVG(e.power), 0) as avg_watts
+      FROM (
+        SELECT CURRENT_DATE - i as day 
+        FROM generate_series(6, 0, -1) as i
+      ) d
+      LEFT JOIN energy_logs e 
+        ON e.user_id = $1 
+        AND e.created_at::date = d.day::date
+      GROUP BY d.day
+      ORDER BY d.day ASC
+    `, [req.user.userId]);
+
+    // Format for Recharts
+    const chartData = result.rows.map(r => ({
+      name: r.name,
+      value: Math.round(parseFloat(r.kwh) * 1000) || Math.round(parseFloat(r.avg_watts) * 1.5) || 0, // Watt-hours
+      kwh: parseFloat(r.kwh).toFixed(3),
+      date: r.date
+    }));
+
+    res.status(200).json(chartData);
+  } catch (err) {
+    console.error('Error fetching weekly energy:', err);
+    res.status(500).json({ error: 'Failed to fetch weekly energy.' });
+  }
+});
+
+// 3. AI Query Helper (Provides genuine DB history to Gemini)
+app.get('/api/energy/summary-for-ai', authenticateToken, async (req, res) => {
+  try {
+    // Today's summary
+    const todayRes = await pool.query(`
+      SELECT COALESCE(MAX(energy_kwh) - MIN(energy_kwh), 0) as today_kwh,
+             COALESCE(AVG(power), 0) as avg_power
+      FROM energy_logs 
+      WHERE user_id = $1 AND created_at >= CURRENT_DATE
+    `, [req.user.userId]);
+
+    // Yesterday's summary
+    const yestRes = await pool.query(`
+      SELECT COALESCE(MAX(energy_kwh) - MIN(energy_kwh), 0) as yest_kwh,
+             COALESCE(AVG(power), 0) as avg_power
+      FROM energy_logs 
+      WHERE user_id = $1 
+        AND created_at >= CURRENT_DATE - INTERVAL '1 day'
+        AND created_at < CURRENT_DATE
+    `, [req.user.userId]);
+
+    // User's appliances
+    const appRes = await pool.query(`
+      SELECT channel, name, room FROM user_appliances WHERE user_id = $1 ORDER BY channel ASC
+    `, [req.user.userId]);
+
+    res.status(200).json({
+      todayKwh: parseFloat(todayRes.rows[0]?.today_kwh || 0).toFixed(3),
+      todayAvgPower: Math.round(todayRes.rows[0]?.avg_power || 0),
+      yesterdayKwh: parseFloat(yestRes.rows[0]?.yest_kwh || 0).toFixed(3),
+      yesterdayAvgPower: Math.round(yestRes.rows[0]?.avg_power || 0),
+      appliances: appRes.rows
+    });
+  } catch (err) {
+    console.error('Error fetching summary for AI:', err);
+    res.status(500).json({ error: 'Failed to fetch AI summary.' });
+  }
+});
+
 // Start Server
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`EnerSense Backend Server running on http://localhost:${PORT}`);
 });

@@ -21,13 +21,11 @@ export default function AppliancesPage() {
   const navigate = useNavigate();
   const [activeTab] = useState('appliances');
   
-  // Use context
-  const { appliances, toggleAppliance, turnAllOff } = useContext(MqttContext);
+  const { appliances, toggleAppliance, turnAllOff, renameAppliance } = useContext(MqttContext);
 
-  const totalDraw = appliances.reduce((sum, app) => app.isOn ? sum + app.wattage : sum, 0);
+  const totalDraw = appliances.reduce((sum, app) => app.isOn ? sum + (app.wattage || 0) : sum, 0);
   const activeCount = appliances.filter(app => app.isOn).length;
 
-  // Retrieve user initial
   const savedUser = JSON.parse(localStorage.getItem('enersense_user') || '{}');
   const avatarLetter = (savedUser.firstName || savedUser.email || 'K')[0].toUpperCase();
 
@@ -66,27 +64,51 @@ export default function AppliancesPage() {
                 <LineChartIcon size={18} />
                 <span>Energy Graphs</span>
               </button>
-              <button className="nav-item" onClick={() => navigate('/alerts')} style={{ padding: '8px 16px', whiteSpace: 'nowrap', color: '#fff' }}>
+              <button className={`nav-item ${activeTab === 'alerts' ? 'active' : ''}`} onClick={() => navigate('/alerts')} style={{ padding: '8px 16px', whiteSpace: 'nowrap', color: '#fff' }}>
                 <Bell size={18} />
                 <span>Alerts</span>
               </button>
-
-              {/* Profile */}
-              <div onClick={() => navigate('/profile')} style={{ width: 36, height: 36, minWidth: 36, minHeight: 36, flexShrink: 0, borderRadius: '50%', background: '#cd1f59', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold', marginLeft: '12px', cursor: 'pointer', transition: 'transform 0.2s ease, box-shadow 0.2s ease' }} onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.1)'; e.currentTarget.style.boxShadow = '0 0 16px rgba(205,31,89,0.5)'; }} onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}>
-                {avatarLetter}
-              </div>
             </nav>
           </div>
         </GlassSurface>
       </div>
 
-      {/* Main Content Area with LightRays BG */}
-      <main className="dashboard-main" style={{ padding: '0', height: '100vh', width: '100%', boxSizing: 'border-box', position: 'relative', overflow: 'hidden' }}>
-        
-        {/* Animated Background */}
-        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }}>
-          <LightRays 
-            raysOrigin="top-center" // Originating from the top down
+      {/* User Profile Avatar Top Right */}
+      <div 
+        onClick={() => navigate('/profile')}
+        style={{
+          position: 'fixed',
+          top: 24,
+          right: 56,
+          width: 52,
+          height: 52,
+          borderRadius: '50%',
+          background: 'linear-gradient(135deg, #ec4899, #f43f5e)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#ffffff',
+          fontWeight: '700',
+          fontSize: '18px',
+          boxShadow: '0 8px 32px rgba(236, 72, 153, 0.3)',
+          cursor: 'pointer',
+          zIndex: 101,
+          border: '2px solid rgba(255, 255, 255, 0.2)',
+          transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.08)'}
+        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+      >
+        {avatarLetter}
+      </div>
+
+      <div className="appliances-container">
+        {/* Ambient Light Rays Background */}
+        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 1 }}>
+          <LightRays
+            color="rgba(104, 211, 200, 0.12)"
+            raysOrigin="top-center"
+            raysDensity={0.6}
             raysSpeed={0.4}
             lightSpread={1.2}
             pulsating={true}
@@ -98,6 +120,7 @@ export default function AppliancesPage() {
           <DepthCarousel 
             appliances={appliances} 
             onToggleAppliance={toggleAppliance} 
+            onRenameAppliance={renameAppliance}
           />
 
           {/* BOTTOM LEFT WIDGET: Total Power Draw */}
@@ -138,18 +161,57 @@ export default function AppliancesPage() {
             <GlassSurface width="100%" height="auto" borderRadius={24} borderWidth={0.03} opacity={0.8} blur={16}>
               <div style={{ padding: '24px' }}>
                 <div style={{ fontSize: '12px', color: '#888', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '16px', fontWeight: 600 }}>Quick Actions</div>
-                
-                {/* Only keeping the master off switch as requested */}
-                <button className="quick-action-btn off" onClick={turnAllOff}>
-                  <PowerOff size={18} color="#ec4899" />
-                  Turn All Off
-                </button>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button 
+                    className="action-btn"
+                    onClick={turnAllOff}
+                    style={{ 
+                      flex: 1, 
+                      padding: '12px 16px', 
+                      borderRadius: '12px', 
+                      background: 'rgba(239, 68, 68, 0.1)', 
+                      border: '1px solid rgba(239, 68, 68, 0.2)', 
+                      color: '#ef4444', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      gap: '8px', 
+                      fontSize: '13px', 
+                      fontWeight: 600, 
+                      cursor: 'pointer' 
+                    }}
+                  >
+                    <PowerOff size={16} />
+                    Turn All Off
+                  </button>
+                  <button 
+                    className="action-btn"
+                    onClick={() => navigate('/dashboard')}
+                    style={{ 
+                      flex: 1, 
+                      padding: '12px 16px', 
+                      borderRadius: '12px', 
+                      background: 'rgba(255, 255, 255, 0.05)', 
+                      border: '1px solid rgba(255, 255, 255, 0.1)', 
+                      color: '#fff', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      gap: '8px', 
+                      fontSize: '13px', 
+                      fontWeight: 600, 
+                      cursor: 'pointer' 
+                    }}
+                  >
+                    <FileText size={16} />
+                    View Bill
+                  </button>
+                </div>
               </div>
             </GlassSurface>
           </div>
-
         </div>
-      </main>
+      </div>
     </div>
   );
 }
