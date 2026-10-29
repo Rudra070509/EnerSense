@@ -148,9 +148,9 @@ mqttClient.on('message', (topic, message) => {
 setInterval(async () => {
   if (!latestTelemetry) return;
   try {
-    // For local prototype demonstration, associate with the most recently active or first user
-    const usersRes = await pool.query('SELECT id FROM users ORDER BY id ASC LIMIT 5');
-    if (usersRes.rows.length === 0) return;
+    // Associate with the primary user (e.g. rudrashetye7@gmail.com or primary active user)
+    const userRes = await pool.query("SELECT id FROM users WHERE email = 'rudrashetye7@gmail.com' LIMIT 1");
+    const targetUserId = userRes.rows[0]?.id || 1;
 
     const v1 = latestTelemetry.appliance1?.voltage || latestTelemetry.appliance2?.voltage || 0;
     const p1 = latestTelemetry.appliance1?.power || 0;
@@ -161,12 +161,10 @@ setInterval(async () => {
 
     // Only log if voltage > 0 (meaning hardware is actively connected)
     if (v1 > 0) {
-      for (const u of usersRes.rows) {
-        await pool.query(`
-          INSERT INTO energy_logs (user_id, voltage, current, power, energy_kwh, app1_power, app2_power)
-          VALUES ($1, $2, $3, $4, $5, $6, $7)
-        `, [u.id, v1, c1, totalPower, totalEnergy, p1, p2]);
-      }
+      await pool.query(`
+        INSERT INTO energy_logs (user_id, voltage, current, power, energy_kwh, app1_power, app2_power)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `, [targetUserId, v1, c1, totalPower, totalEnergy, p1, p2]);
     }
   } catch (err) {
     console.error('Failed to log telemetry snapshot to DB:', err.message);
