@@ -64,7 +64,7 @@ export default function DepthCarousel({ appliances, onToggleAppliance, onRenameA
         </button>
       )}
 
-      <div className="carousel-track" style={{ perspective: '1200px' }}>
+      <div className="carousel-track">
         {appliances.map((app, i) => {
           let dist = i - activeIndex;
           if (total > 2) {
@@ -76,21 +76,22 @@ export default function DepthCarousel({ appliances, onToggleAppliance, onRenameA
           const sign = Math.sign(dist);
           const isActive = dist === 0;
 
-          const tx = dist * 280;
-          const tz = -absDist * 160;
-          const ry = -sign * Math.min(absDist * 22, 45);
-          const opacity = Math.max(1 - absDist * 0.35, 0.2);
-          const zIndex = 100 - absDist;
+          // 3D Perspective Stacking
+          const translateX = sign * 200 * absDist;
+          const translateZ = -140 * absDist;
+          const rotateY = -sign * 20 * absDist;
+          const scale = Math.max(1 - (absDist * 0.1), 0.7);
 
           return (
             <div
               key={app.id || app.channel || i}
-              className={`carousel-card-wrap ${isActive ? 'active' : ''}`}
+              className={`carousel-item ${isActive ? 'active' : ''}`}
               style={{
-                transform: `translateX(${tx}px) translateZ(${tz}px) rotateY(${ry}deg)`,
-                opacity: opacity,
-                zIndex: zIndex,
-                transition: 'all 0.4s cubic-bezier(0.25, 1, 0.5, 1)',
+                transform: `translateX(${translateX}px) translateZ(${translateZ}px) rotateY(${rotateY}deg) scale(${scale})`,
+                opacity: isActive ? 1 : 0.6,
+                filter: isActive ? 'none' : 'brightness(0.7)',
+                zIndex: 100 - absDist,
+                transition: 'all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)',
                 cursor: isActive ? 'default' : 'pointer',
               }}
               onClick={() => {
