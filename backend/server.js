@@ -59,6 +59,8 @@ const initDB = async () => {
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token VARCHAR(255)`);
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token_expiry TIMESTAMP`);
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(50)`);
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_otp VARCHAR(10)`);
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_otp_expiry TIMESTAMP`);
 
     // 2. User Appliances table (Personalized per user, starts as Appliance 1 & Appliance 2)
     await pool.query(`
@@ -148,10 +150,6 @@ mqttClient.on('message', (topic, message) => {
 setInterval(async () => {
   if (!latestTelemetry) return;
   try {
-    // Associate with the primary user (e.g. rudrashetye7@gmail.com or primary active user)
-    const userRes = await pool.query("SELECT id FROM users WHERE email = 'rudrashetye7@gmail.com' LIMIT 1");
-    const targetUserId = userRes.rows[0]?.id || 1;
-
     const v1 = latestTelemetry.appliance1?.voltage || latestTelemetry.appliance2?.voltage || 0;
     const p1 = latestTelemetry.appliance1?.power || 0;
     const p2 = latestTelemetry.appliance2?.power || 0;
@@ -161,10 +159,13 @@ setInterval(async () => {
 
     // Only log if voltage > 0 (meaning hardware is actively connected)
     if (v1 > 0) {
-      await pool.query(`
-        INSERT INTO energy_logs (user_id, voltage, current, power, energy_kwh, app1_power, app2_power)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-      `, [targetUserId, v1, c1, totalPower, totalEnergy, p1, p2]);
+      const allUsers = await pool.query('SELECT id FROM users');
+      for (const u of allUsers.rows) {
+        await pool.query(`
+          INSERT INTO energy_logs (user_id, voltage, current, power, energy_kwh, app1_power, app2_power)
+          VALUES ($1, $2, $3, $4, $5, $6, $7)
+        `, [u.id, v1, c1, totalPower, totalEnergy, p1, p2]);
+      }
     }
   } catch (err) {
     console.error('Failed to log telemetry snapshot to DB:', err.message);
@@ -311,6 +312,95 @@ app.post('/api/auth/google', async (req, res) => {
   }
 });
 
+// 4. Forgot Password - Send OTP via email
+app.post('/api/auth/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'No account found with this email.' });
+    }
+
+    // Generate a 6-digit OTP
+    const otp = crypto.randomInt(100000, 999999).toString();
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Store OTP in database
+    await pool.query(
+      'UPDATE users SET reset_otp = $1, reset_otp_expiry = $2 WHERE email = $3',
+      [otp, otpExpiry, email]
+    );
+
+    // Send OTP via email
+    try {
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER || 'enersense.noreply@gmail.com',
+        to: email,
+        subject: 'EnerSense - Password Reset OTP',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #10b981;">EnerSense Password Reset</h2>
+            <p>Your one-time password (OTP) for password reset is:</p>
+            <div style="font-size: 32px; font-weight: bold; letter-spacing: 8px; text-align: center; 
+                        padding: 20px; background: #f0fdf4; border-radius: 12px; color: #059669;">
+              ${otp}
+            </div>
+            <p style="color: #666; font-size: 13px; margin-top: 16px;">
+              This OTP is valid for 10 minutes. If you did not request this, please ignore this email.
+            </p>
+          </div>
+        `
+      });
+    } catch (emailErr) {
+      console.error('Email send failed:', emailErr.message);
+      // Still return success - OTP is stored in DB, user can check logs in dev
+    }
+
+    res.status(200).json({ message: 'OTP sent to your email address.' });
+  } catch (err) {
+    console.error('Forgot password error:', err);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+// 5. Reset Password - Verify OTP and set new password
+app.post('/api/auth/reset-password', async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    const user = userResult.rows[0];
+
+    // Verify OTP
+    if (!user.reset_otp || user.reset_otp !== otp) {
+      return res.status(400).json({ error: 'Invalid OTP.' });
+    }
+
+    if (new Date() > new Date(user.reset_otp_expiry)) {
+      return res.status(400).json({ error: 'OTP has expired. Please request a new one.' });
+    }
+
+    // Hash new password and update
+    const saltRounds = 10;
+    const passwordHash = await bcrypt.hash(newPassword, saltRounds);
+
+    await pool.query(
+      'UPDATE users SET password_hash = $1, reset_otp = NULL, reset_otp_expiry = NULL WHERE email = $2',
+      [passwordHash, email]
+    );
+
+    res.status(200).json({ message: 'Password reset successfully.' });
+  } catch (err) {
+    console.error('Reset password error:', err);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
 // --- User Profile Routes ---
 app.get('/api/user/profile', authenticateToken, async (req, res) => {
   try {
@@ -384,6 +474,53 @@ app.put('/api/appliances/:channel', authenticateToken, async (req, res) => {
   } catch (err) {
     console.error('Error updating appliance:', err);
     res.status(500).json({ error: 'Failed to update appliance.' });
+  }
+});
+
+// 3. Create / Add New Appliance
+app.post('/api/appliances', authenticateToken, async (req, res) => {
+  try {
+    const { name, room, type, image, channel } = req.body;
+
+    let targetChannel = channel ? parseInt(channel, 10) : null;
+    if (!targetChannel) {
+      const maxRes = await pool.query(
+        'SELECT COALESCE(MAX(channel), 0) + 1 AS next_channel FROM user_appliances WHERE user_id = $1',
+        [req.user.userId]
+      );
+      targetChannel = maxRes.rows[0].next_channel;
+    }
+
+    const defaultImages = [
+      '/assets/appliance_card1.jpg',
+      '/assets/appliance_card2.jpg'
+    ];
+    const chosenImage = image || defaultImages[(targetChannel - 1) % defaultImages.length];
+
+    const result = await pool.query(`
+      INSERT INTO user_appliances (user_id, channel, name, room, type, image)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      ON CONFLICT (user_id, channel) DO UPDATE 
+      SET name = EXCLUDED.name, room = EXCLUDED.room, type = EXCLUDED.type, image = EXCLUDED.image
+      RETURNING *
+    `, [req.user.userId, targetChannel, name || `Appliance ${targetChannel}`, room || 'Living Room', type || 'light', chosenImage]);
+
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error('Error adding new appliance:', err);
+    res.status(500).json({ error: 'Failed to add appliance.' });
+  }
+});
+
+// 4. Delete Appliance
+app.delete('/api/appliances/:channel', authenticateToken, async (req, res) => {
+  try {
+    const channel = parseInt(req.params.channel, 10);
+    await pool.query('DELETE FROM user_appliances WHERE user_id = $1 AND channel = $2', [req.user.userId, channel]);
+    res.status(200).json({ message: 'Appliance removed successfully.' });
+  } catch (err) {
+    console.error('Error deleting appliance:', err);
+    res.status(500).json({ error: 'Failed to delete appliance.' });
   }
 });
 

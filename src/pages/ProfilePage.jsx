@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Phone, Star, ArrowLeft, LogOut, Edit3, Save, X, MessageSquare, Globe, Sparkles } from 'lucide-react';
 import Toast from '../components/Toast';
+import { API_BASE_URL } from '../utils/api';
 import '../styles/profile.css';
 
 /**
@@ -37,7 +38,7 @@ export default function ProfilePage() {
         const token = localStorage.getItem('enersense_token');
         if (!token) return;
 
-        const response = await fetch('http://localhost:5000/api/user/profile', {
+        const response = await fetch(`${API_BASE_URL}/api/user/profile`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -71,7 +72,7 @@ export default function ProfilePage() {
       const token = localStorage.getItem('enersense_token');
       if (!token) throw new Error('No authentication token found.');
 
-      const response = await fetch('http://localhost:5000/api/user/profile', {
+      const response = await fetch(`${API_BASE_URL}/api/user/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -216,15 +217,24 @@ export default function ProfilePage() {
                      {isEditing ? (
                         <input type="text" name="phone" value={editFormData.phone} onChange={handleChange} className="adv-input" placeholder="Phone" />
                      ) : (
-                        <span className="adv-contact-text" style={{ opacity: profileData.phone ? 1 : 0.5 }}>{profileData.phone || 'Add number'}</span>
+                        <span 
+                           className="adv-contact-text" 
+                           style={{ opacity: profileData.phone ? 1 : 0.6, cursor: profileData.phone ? 'default' : 'pointer' }}
+                           onClick={() => !profileData.phone && setIsEditing(true)}
+                           title={profileData.phone || 'Click to edit and add phone number'}
+                        >
+                           {profileData.phone || 'Add number'}
+                        </span>
                      )}
                   </div>
-                  <div className="adv-contact-row" style={{marginTop: 8}}>
+                  <div className="adv-contact-row">
                      <Mail size={16} className="adv-icon-muted" />
                      {isEditing ? (
                         <input type="email" name="email" value={editFormData.email} onChange={handleChange} className="adv-input" placeholder="Email" />
                      ) : (
-                        <span className="adv-contact-link">{profileData.email || 'kevin.smith@stripe.com'}</span>
+                        <span className="adv-contact-link" title={profileData.email || 'user@example.com'}>
+                           {profileData.email || 'user@example.com'}
+                        </span>
                      )}
                   </div>
               </div>

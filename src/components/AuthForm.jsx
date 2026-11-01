@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import PasswordInput from './PasswordInput';
 import SocialButtons from './SocialButtons';
 import { Check } from 'lucide-react';
+import { API_BASE_URL } from '../utils/api';
 
 /**
  * AuthForm Component
@@ -64,7 +65,7 @@ export default function AuthForm({ onSuccess }) {
         body = { email, otp, newPassword: password };
       }
 
-      const response = await fetch(`http://localhost:5000${endpoint}`, {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)

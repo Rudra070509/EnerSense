@@ -16,12 +16,15 @@ import '../styles/appliances.css';
 import GlassSurface from '../components/GlassSurface/GlassSurface';
 import DepthCarousel from '../components/Appliances/DepthCarousel';
 import LightRays from '../components/Backgrounds/LightRays';
+import AddApplianceModal from '../components/Appliances/AddApplianceModal';
+import { Plus } from 'lucide-react';
 
 export default function AppliancesPage() {
   const navigate = useNavigate();
   const [activeTab] = useState('appliances');
   
-  const { appliances, toggleAppliance, turnAllOff, renameAppliance } = useContext(MqttContext);
+  const { appliances, toggleAppliance, turnAllOff, renameAppliance, addAppliance } = useContext(MqttContext);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const totalDraw = appliances.reduce((sum, app) => app.isOn ? sum + (app.wattage || 0) : sum, 0);
   const activeCount = appliances.filter(app => app.isOn).length;
@@ -121,6 +124,7 @@ export default function AppliancesPage() {
             appliances={appliances} 
             onToggleAppliance={toggleAppliance} 
             onRenameAppliance={renameAppliance}
+            onOpenAddWizard={() => setIsAddModalOpen(true)}
           />
 
           {/* BOTTOM LEFT WIDGET: Total Power Draw */}
@@ -161,50 +165,78 @@ export default function AppliancesPage() {
             <GlassSurface width="100%" height="auto" borderRadius={24} borderWidth={0.03} opacity={0.8} blur={16}>
               <div style={{ padding: '24px' }}>
                 <div style={{ fontSize: '12px', color: '#888', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '16px', fontWeight: 600 }}>Quick Actions</div>
-                <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button 
+                    className="action-btn"
+                    onClick={() => setIsAddModalOpen(true)}
+                    style={{ 
+                      flex: 1, 
+                      padding: '12px 10px', 
+                      borderRadius: '12px', 
+                      background: 'rgba(104, 211, 200, 0.12)', 
+                      border: '1px solid rgba(104, 211, 200, 0.3)', 
+                      color: '#68d3c8', 
+                      display: 'inline-flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      gap: '6px', 
+                      fontSize: '12px', 
+                      fontWeight: 600, 
+                      whiteSpace: 'nowrap',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <Plus size={15} style={{ flexShrink: 0 }} />
+                    <span>Add Device</span>
+                  </button>
                   <button 
                     className="action-btn"
                     onClick={turnAllOff}
                     style={{ 
                       flex: 1, 
-                      padding: '12px 16px', 
+                      padding: '12px 10px', 
                       borderRadius: '12px', 
                       background: 'rgba(239, 68, 68, 0.1)', 
                       border: '1px solid rgba(239, 68, 68, 0.2)', 
                       color: '#ef4444', 
-                      display: 'flex', 
+                      display: 'inline-flex', 
                       alignItems: 'center', 
                       justifyContent: 'center', 
-                      gap: '8px', 
-                      fontSize: '13px', 
+                      gap: '6px', 
+                      fontSize: '12px', 
                       fontWeight: 600, 
-                      cursor: 'pointer' 
+                      whiteSpace: 'nowrap',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
                     }}
                   >
-                    <PowerOff size={16} />
-                    Turn All Off
+                    <PowerOff size={15} style={{ flexShrink: 0 }} />
+                    <span>Turn All Off</span>
                   </button>
                   <button 
                     className="action-btn"
                     onClick={() => navigate('/dashboard')}
                     style={{ 
                       flex: 1, 
-                      padding: '12px 16px', 
+                      padding: '12px 10px', 
                       borderRadius: '12px', 
                       background: 'rgba(255, 255, 255, 0.05)', 
                       border: '1px solid rgba(255, 255, 255, 0.1)', 
                       color: '#fff', 
-                      display: 'flex', 
+                      display: 'inline-flex', 
                       alignItems: 'center', 
                       justifyContent: 'center', 
-                      gap: '8px', 
-                      fontSize: '13px', 
+                      gap: '6px', 
+                      fontSize: '12px', 
                       fontWeight: 600, 
-                      cursor: 'pointer' 
+                      whiteSpace: 'nowrap',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
                     }}
                   >
-                    <FileText size={16} />
-                    View Bill
+                    <FileText size={15} style={{ flexShrink: 0 }} />
+                    <span>View Bill</span>
                   </button>
                 </div>
               </div>
@@ -212,6 +244,13 @@ export default function AppliancesPage() {
           </div>
         </div>
       </div>
+
+      <AddApplianceModal 
+        isOpen={isAddModalOpen} 
+        onClose={() => setIsAddModalOpen(false)} 
+        onAddAppliance={addAppliance}
+        nextSuggestedChannel={appliances.length + 1}
+      />
     </div>
   );
 }

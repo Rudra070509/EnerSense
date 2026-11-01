@@ -29,16 +29,15 @@ export default function DashboardPage() {
     livePower, 
     todayCost, 
     billPrediction, 
-    appliances 
+    appliances,
+    chatMessages,
+    setChatMessages
   } = useContext(MqttContext);
   
   // Controls the currently active tab in the top navigation bar
   const [activeTab, setActiveTab] = useState('dashboard');
   
-  // State for the AI Chat Assistant
-  const [chatMessages, setChatMessages] = useState([
-    { role: 'ai', text: "Hello! I'm EnerSense AI. Ask me about your live energy consumption, current power draw, or estimated electricity bill!" }
-  ]);
+  // Chat messages are globally persisted via MqttContext
   
   const [chatInput, setChatInput] = useState('');
   const [isAiLoading, setIsAiLoading] = useState(false);
@@ -92,9 +91,15 @@ export default function DashboardPage() {
       topAppliances: `Smart AC (${app1Pct}%), OLED TV (${app2Pct}%)`
     };
 
-    const aiResponse = await getGeminiResponse(userMsg, currentDashboardData);
-    setChatMessages(prev => [...prev, { role: 'ai', text: aiResponse }]);
-    setIsAiLoading(false);
+    try {
+      const aiResponse = await getGeminiResponse(userMsg, currentDashboardData);
+      setChatMessages(prev => [...prev, { role: 'ai', text: aiResponse }]);
+    } catch (err) {
+      console.error('Chat error:', err);
+      setChatMessages(prev => [...prev, { role: 'ai', text: "Sorry, I am unable to connect right now." }]);
+    } finally {
+      setIsAiLoading(false);
+    }
   };
 
   const handleClearChat = () => {

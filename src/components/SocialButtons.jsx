@@ -1,5 +1,6 @@
 import React from 'react';
 import { GoogleLogin } from '@react-oauth/google';
+import { API_BASE_URL } from '../utils/api';
 
 /**
  * SocialButtons Component
@@ -11,10 +12,10 @@ export default function SocialButtons({ mode, onGoogleSuccess }) {
 
   const handleSuccess = async (credentialResponse) => {
     try {
-      const response = await fetch('http://localhost:5000/api/auth/google', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/google`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: credentialResponse.credential })
+        body: JSON.stringify({ credential: credentialResponse.credential })
       });
       
       const data = await response.json();

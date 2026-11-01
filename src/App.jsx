@@ -3,12 +3,20 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 
 function GlobalBackground() {
   const location = useLocation();
-  
-  // Hide the global plasma on the appliances page
-  if (location.pathname === '/appliances') return null;
+  const isHidden = location.pathname === '/appliances';
   
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: -1 }}>
+    <div style={{ 
+      position: 'fixed', 
+      top: 0, 
+      left: 0, 
+      width: '100vw', 
+      height: '100vh', 
+      zIndex: -1,
+      opacity: isHidden ? 0 : 1,
+      pointerEvents: 'none',
+      transition: 'opacity 0.3s ease'
+    }}>
       <Plasma speed={0.5} />
     </div>
   );

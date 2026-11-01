@@ -184,7 +184,7 @@ body {
 
 .wrapped-header {
   margin-bottom: 40px;
-  animation: cardFadeIn 0.6s ease-out backwards;
+  animation: cardFadeIn 0.25s ease-out;
 }
 
 .wrapped-title {
@@ -233,7 +233,7 @@ body {
   overflow: hidden;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
   transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease, background 0.3s ease;
-  animation: cardFadeIn 0.6s ease-out backwards;
+  animation: cardFadeIn 0.25s ease-out;
 }
 
 .wrapped-glass-card:hover {
@@ -461,4 +461,24 @@ body {
   background: linear-gradient(135deg, #fdba74 0%, #f97316 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+/* Real-time telemetry pulse animation */
+@keyframes pulseGlow {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.6; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.pulse-icon {
+  animation: pulseGlow 1.8s infinite ease-in-out;
+}
+
+@keyframes spinSlow {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.spin-icon {
+  animation: spinSlow 1.5s linear infinite;
 }

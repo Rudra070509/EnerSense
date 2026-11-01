@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useRef } from 'react';
 import mqtt from 'mqtt';
 import { calculateTodayCost, calculateMonthlyPrediction } from '../utils/billing';
+import { API_BASE_URL } from '../utils/api';
 
 export const MqttContext = createContext();
 
@@ -15,14 +16,31 @@ export const MqttProvider = ({ children }) => {
   const [liveEnergy, setLiveEnergy] = useState('0.000');
   const [liveVoltage, setLiveVoltage] = useState(0);
   const [livePower, setLivePower] = useState(0); // Watts
+  const [liveCurrent, setLiveCurrent] = useState(0); // Amperes
   const [isHardwareOnline, setIsHardwareOnline] = useState(false);
   const [powerData, setPowerData] = useState(
-    Array.from({ length: 15 }, () => ({ time: '', power: 0 }))
+    Array.from({ length: 20 }, () => ({
+      time: '',
+      power: 0,
+      totalPower: 0,
+      app1Power: 0,
+      app2Power: 0,
+      voltage: 0,
+      current: 0,
+      app1Current: 0,
+      app2Current: 0,
+      energy: 0
+    }))
   );
   
   // Real-time bill calculations
   const [todayCost, setTodayCost] = useState('0.00');
   const [billPrediction, setBillPrediction] = useState(() => calculateMonthlyPrediction(0, 0));
+
+  // Global AI chat messages (persisted across page navigation)
+  const [chatMessages, setChatMessages] = useState([
+    { role: 'ai', text: "Hello! I'm EnerSense AI. Ask me about your live energy consumption, current power draw, or estimated electricity bill!" }
+  ]);
 
   const mqttClientRef = useRef(null);
   const powerDataRef = useRef(powerData);
@@ -37,7 +55,7 @@ export const MqttProvider = ({ children }) => {
       const headers = { 'Authorization': `Bearer ${token}` };
 
       // 1. Fetch user's appliances
-      const appRes = await fetch('http://localhost:5000/api/appliances', { headers });
+      const appRes = await fetch('${API_BASE_URL}/api/appliances', { headers });
       if (appRes.ok) {
         const dbApps = await appRes.json();
         if (Array.isArray(dbApps) && dbApps.length > 0) {
@@ -58,7 +76,7 @@ export const MqttProvider = ({ children }) => {
       }
 
       // 2. Fetch today's database consumption
-      const energyRes = await fetch('http://localhost:5000/api/energy/today', { headers });
+      const energyRes = await fetch('${API_BASE_URL}/api/energy/today', { headers });
       if (energyRes.ok) {
         const stats = await energyRes.json();
         if (stats.hasLogsToday && stats.todayKwh) {
@@ -88,7 +106,10 @@ export const MqttProvider = ({ children }) => {
   }, [isHardwareOnline]);
 
   useEffect(() => {
-    const client = mqtt.connect('ws://broker.hivemq.com:8000/mqtt');
+    const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+    const defaultBroker = isHttps ? 'wss://broker.hivemq.com:8884/mqtt' : 'ws://broker.hivemq.com:8000/mqtt';
+    const brokerUrl = import.meta.env.VITE_MQTT_BROKER_URL || defaultBroker;
+    const client = mqtt.connect(brokerUrl);
     
     client.on('connect', () => {
       console.log('Global MQTT Connected');
@@ -105,21 +126,43 @@ export const MqttProvider = ({ children }) => {
           let totalEnergy = 0;
           let combinedPower = 0;
           let voltage = 0;
+          let totalCurrent = 0;
+          let app1Power = 0;
+          let app2Power = 0;
+          let app1Current = 0;
+          let app2Current = 0;
 
           if (data.appliance1) {
             if (data.appliance1.energy !== undefined) totalEnergy += data.appliance1.energy;
-            if (data.appliance1.power !== undefined) combinedPower += data.appliance1.power;
-            if (data.appliance1.voltage !== undefined && data.appliance1.voltage > 0) voltage = data.appliance1.voltage;
+            if (data.appliance1.power !== undefined) {
+              combinedPower += data.appliance1.power;
+              app1Power = data.appliance1.power;
+            }
+            if (data.appliance1.voltage !== undefined && data.appliance1.voltage > 0) {
+              voltage = data.appliance1.voltage;
+            }
+            if (data.appliance1.current !== undefined) {
+              totalCurrent += data.appliance1.current;
+              app1Current = data.appliance1.current;
+            }
           }
           if (data.appliance2) {
-            if (data.appliance2.power !== undefined) combinedPower += data.appliance2.power;
+            if (data.appliance2.power !== undefined) {
+              combinedPower += data.appliance2.power;
+              app2Power = data.appliance2.power;
+            }
             if (voltage === 0 && data.appliance2.voltage !== undefined && data.appliance2.voltage > 0) {
               voltage = data.appliance2.voltage;
+            }
+            if (data.appliance2.current !== undefined) {
+              totalCurrent += data.appliance2.current;
+              app2Current = data.appliance2.current;
             }
           }
 
           setLiveVoltage(Math.round(voltage));
           setLivePower(Math.round(combinedPower));
+          setLiveCurrent(parseFloat(totalCurrent.toFixed(3)));
 
           if (totalEnergy > 0) {
             const formattedKwh = totalEnergy.toFixed(3);
@@ -148,10 +191,21 @@ export const MqttProvider = ({ children }) => {
             return app;
           }));
 
-          // Update graph data
+          // Update graph data with all real-time parameters
           const now = new Date();
           const timeStr = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-          const newPoint = { time: timeStr, power: Math.round(combinedPower) };
+          const newPoint = { 
+            time: timeStr, 
+            power: Math.round(combinedPower),
+            totalPower: Math.round(combinedPower),
+            app1Power: Math.round(app1Power * 10) / 10,
+            app2Power: Math.round(app2Power * 10) / 10,
+            voltage: Math.round(voltage * 10) / 10,
+            current: parseFloat(totalCurrent.toFixed(3)),
+            app1Current: parseFloat(app1Current.toFixed(3)),
+            app2Current: parseFloat(app2Current.toFixed(3)),
+            energy: parseFloat(totalEnergy.toFixed(3))
+          };
           
           const newData = [...powerDataRef.current.slice(1), newPoint];
           powerDataRef.current = newData;
@@ -199,9 +253,9 @@ export const MqttProvider = ({ children }) => {
         app.channel === channel ? { ...app, name: newName, room: newRoom } : app
       ));
 
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('enersense_token') || localStorage.getItem('token');
       if (token) {
-        await fetch(`http://localhost:5000/api/appliances/${channel}`, {
+        await fetch(`${API_BASE_URL}/api/appliances/${channel}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -215,20 +269,97 @@ export const MqttProvider = ({ children }) => {
     }
   };
 
+  // Add new appliance & persist to PostgreSQL
+  const addAppliance = async (newAppData) => {
+    try {
+      const token = localStorage.getItem('enersense_token') || localStorage.getItem('token');
+      const res = await fetch('${API_BASE_URL}/api/appliances', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(newAppData)
+      });
+
+      if (res.ok) {
+        const created = await res.json();
+        setAppliances(prev => {
+          const formatted = {
+            id: created.channel,
+            channel: created.channel,
+            name: created.name,
+            room: created.room || 'Living Room',
+            type: created.type || 'light',
+            wattage: 0,
+            isOn: false,
+            image: created.image || '/assets/appliance_card1.jpg'
+          };
+          const existingIdx = prev.findIndex(a => a.channel === created.channel);
+          if (existingIdx >= 0) {
+            const next = [...prev];
+            next[existingIdx] = formatted;
+            return next;
+          }
+          return [...prev, formatted];
+        });
+        return created;
+      }
+    } catch (e) {
+      console.error('Failed to add appliance to backend:', e);
+    }
+
+    // Local state fallback if backend/token unavailable
+    const fallbackChannel = newAppData.channel || appliances.length + 1;
+    const fallbackApp = {
+      id: fallbackChannel,
+      channel: fallbackChannel,
+      name: newAppData.name || `Appliance ${fallbackChannel}`,
+      room: newAppData.room || 'Living Room',
+      type: newAppData.type || 'light',
+      wattage: 0,
+      isOn: false,
+      image: newAppData.image || '/assets/appliance_card1.jpg'
+    };
+    setAppliances(prev => [...prev, fallbackApp]);
+    return fallbackApp;
+  };
+
+  // Delete appliance
+  const deleteAppliance = async (channel) => {
+    try {
+      setAppliances(prev => prev.filter(a => a.channel !== channel));
+      const token = localStorage.getItem('enersense_token') || localStorage.getItem('token');
+      if (token) {
+        await fetch(`${API_BASE_URL}/api/appliances/${channel}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+      }
+    } catch (e) {
+      console.error('Failed to delete appliance:', e);
+    }
+  };
+
   return (
     <MqttContext.Provider value={{
       appliances,
       toggleAppliance,
       turnAllOff,
       renameAppliance,
+      addAppliance,
+      deleteAppliance,
       refreshAppliances: loadUserDataFromDb,
       liveEnergy,
       liveVoltage,
       livePower,
+      liveCurrent,
       isHardwareOnline,
       powerData,
       todayCost,
-      billPrediction
+      billPrediction,
+      chatMessages,
+      setChatMessages
     }}>
       {children}
     </MqttContext.Provider>
