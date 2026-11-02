@@ -12,12 +12,31 @@ export const MqttProvider = ({ children }) => {
     { id: 2, channel: 2, name: 'Appliance 2', room: 'Living Room', type: 'tv', wattage: 0, isOn: false, image: '/assets/appliance_card2.jpg' },
   ]);
 
-  // Clean initialization starting at 0.000 (No more fake 0.800)
-  const [liveEnergy, setLiveEnergy] = useState('0.000');
+  // Persistent live energy & cost so page navigation or refresh NEVER resets to 0.000
+  const [liveEnergy, setLiveEnergy] = useState(() => localStorage.getItem('enersense_today_kwh') || '0.000');
+  const [todayCost, setTodayCost] = useState(() => localStorage.getItem('enersense_today_cost') || '0.00');
   const [liveVoltage, setLiveVoltage] = useState(0);
   const [livePower, setLivePower] = useState(0); // Watts
   const [liveCurrent, setLiveCurrent] = useState(0); // Amperes
   const [isHardwareOnline, setIsHardwareOnline] = useState(false);
+
+  // Manual or auto sensor channel swap (in case CT 1 is clamped to Relay 2 or vice versa)
+  const [swapSensors, setSwapSensors] = useState(() => localStorage.getItem('enersense_sensor_swap') === 'true');
+
+  const toggleSwapSensors = () => {
+    setSwapSensors(prev => {
+      const next = !prev;
+      localStorage.setItem('enersense_sensor_swap', String(next));
+      return next;
+    });
+  };
+
+  const accumulatedEnergyRef = useRef(parseFloat(localStorage.getItem('enersense_today_kwh') || '0'));
+  const appliancesRef = useRef(appliances);
+  useEffect(() => {
+    appliancesRef.current = appliances;
+  }, [appliances]);
+
   const [powerData, setPowerData] = useState(
     Array.from({ length: 20 }, () => ({
       time: '',
@@ -33,9 +52,10 @@ export const MqttProvider = ({ children }) => {
     }))
   );
   
-  // Real-time bill calculations
-  const [todayCost, setTodayCost] = useState('0.00');
-  const [billPrediction, setBillPrediction] = useState(() => calculateMonthlyPrediction(0, 0));
+  // Real-time bill calculations (initialized from stored kWh)
+  const [billPrediction, setBillPrediction] = useState(() => 
+    calculateMonthlyPrediction(parseFloat(localStorage.getItem('enersense_today_kwh') || '0'), 0)
+  );
 
   // Global AI chat messages (persisted across page navigation)
   const [chatMessages, setChatMessages] = useState([
@@ -49,18 +69,18 @@ export const MqttProvider = ({ children }) => {
   // Fetch logged-in user's custom named appliances & today's cumulative energy from DB
   const loadUserDataFromDb = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('enersense_token') || localStorage.getItem('token');
       if (!token) return;
 
       const headers = { 'Authorization': `Bearer ${token}` };
 
       // 1. Fetch user's appliances
-      const appRes = await fetch('${API_BASE_URL}/api/appliances', { headers });
+      const appRes = await fetch(`${API_BASE_URL}/api/appliances`, { headers });
       if (appRes.ok) {
         const dbApps = await appRes.json();
         if (Array.isArray(dbApps) && dbApps.length > 0) {
           setAppliances(prev => dbApps.map(dbA => {
-            const existing = prev.find(p => p.channel === dbA.channel);
+            const existing = prev.find(p => p.channel === dbA.channel || p.id === dbA.channel);
             return {
               id: dbA.channel,
               channel: dbA.channel,
@@ -76,13 +96,24 @@ export const MqttProvider = ({ children }) => {
       }
 
       // 2. Fetch today's database consumption
-      const energyRes = await fetch('${API_BASE_URL}/api/energy/today', { headers });
+      const energyRes = await fetch(`${API_BASE_URL}/api/energy/today`, { headers });
       if (energyRes.ok) {
         const stats = await energyRes.json();
         if (stats.hasLogsToday && stats.todayKwh) {
-          setLiveEnergy(stats.todayKwh);
-          const cost = calculateTodayCost(stats.todayKwh);
-          setTodayCost(cost.toFixed(2));
+          const dbKwh = parseFloat(stats.todayKwh) || 0;
+          if (dbKwh > accumulatedEnergyRef.current) {
+            accumulatedEnergyRef.current = dbKwh;
+            const formatted = dbKwh.toFixed(3);
+            setLiveEnergy(formatted);
+            localStorage.setItem('enersense_today_kwh', formatted);
+
+            const cost = calculateTodayCost(dbKwh);
+            setTodayCost(cost.toFixed(2));
+            localStorage.setItem('enersense_today_cost', cost.toFixed(2));
+
+            const prediction = calculateMonthlyPrediction(dbKwh, livePower);
+            setBillPrediction(prediction);
+          }
         }
       }
     } catch (e) {
@@ -120,91 +151,102 @@ export const MqttProvider = ({ children }) => {
       if (topic === 'enersense/telemetry') {
         try {
           const data = JSON.parse(message.toString());
-          lastTelemetryTime.current = Date.now();
+          const now = Date.now();
+          const dtSeconds = Math.min(Math.max((now - lastTelemetryTime.current) / 1000, 0.5), 10);
+          lastTelemetryTime.current = now;
           setIsHardwareOnline(true);
           
-          let totalEnergy = 0;
-          let combinedPower = 0;
-          let voltage = 0;
-          let totalCurrent = 0;
-          let app1Power = 0;
-          let app2Power = 0;
-          let app1Current = 0;
-          let app2Current = 0;
+          let rawApp1Power = data.appliance1?.power || 0;
+          let rawApp2Power = data.appliance2?.power || 0;
+          let rawApp1Current = data.appliance1?.current || 0;
+          let rawApp2Current = data.appliance2?.current || 0;
+          let rawApp1Energy = data.appliance1?.energy || 0;
+          let rawApp2Energy = data.appliance2?.energy || 0;
 
-          if (data.appliance1) {
-            if (data.appliance1.energy !== undefined) totalEnergy += data.appliance1.energy;
-            if (data.appliance1.power !== undefined) {
-              combinedPower += data.appliance1.power;
-              app1Power = data.appliance1.power;
-            }
-            if (data.appliance1.voltage !== undefined && data.appliance1.voltage > 0) {
-              voltage = data.appliance1.voltage;
-            }
-            if (data.appliance1.current !== undefined) {
-              totalCurrent += data.appliance1.current;
-              app1Current = data.appliance1.current;
-            }
+          let voltage = 0;
+          if (data.appliance1?.voltage && data.appliance1.voltage > 0) {
+            voltage = data.appliance1.voltage;
+          } else if (data.appliance2?.voltage && data.appliance2.voltage > 0) {
+            voltage = data.appliance2.voltage;
           }
-          if (data.appliance2) {
-            if (data.appliance2.power !== undefined) {
-              combinedPower += data.appliance2.power;
-              app2Power = data.appliance2.power;
-            }
-            if (voltage === 0 && data.appliance2.voltage !== undefined && data.appliance2.voltage > 0) {
-              voltage = data.appliance2.voltage;
-            }
-            if (data.appliance2.current !== undefined) {
-              totalCurrent += data.appliance2.current;
-              app2Current = data.appliance2.current;
-            }
+
+          const combinedPower = rawApp1Power + rawApp2Power;
+          const totalCurrent = rawApp1Current + rawApp2Current;
+          const hardwareTotalEnergy = rawApp1Energy + rawApp2Energy;
+
+          // Smart Auto-Routing / Channel Swap:
+          // Check which appliance the user has turned ON in the UI
+          const currentApps = appliancesRef.current;
+          const app1 = currentApps.find(a => (a.channel || a.id) === 1);
+          const app2 = currentApps.find(a => (a.channel || a.id) === 2);
+          const app1IsOn = app1?.isOn || false;
+          const app2IsOn = app2?.isOn || false;
+
+          let effectiveApp1Power = rawApp1Power;
+          let effectiveApp2Power = rawApp2Power;
+          let effectiveApp1Current = rawApp1Current;
+          let effectiveApp2Current = rawApp2Current;
+
+          // If manual swap is enabled OR if only Appliance 2 is ON but raw power arrived on Sensor 1:
+          const shouldSwap = swapSensors || (!app1IsOn && app2IsOn && rawApp1Power > 5 && rawApp2Power === 0);
+          if (shouldSwap) {
+            effectiveApp1Power = rawApp2Power;
+            effectiveApp2Power = rawApp1Power;
+            effectiveApp1Current = rawApp2Current;
+            effectiveApp2Current = rawApp1Current;
           }
 
           setLiveVoltage(Math.round(voltage));
           setLivePower(Math.round(combinedPower));
           setLiveCurrent(parseFloat(totalCurrent.toFixed(3)));
 
-          if (totalEnergy > 0) {
-            const formattedKwh = totalEnergy.toFixed(3);
-            setLiveEnergy(formattedKwh);
-
-            const costToday = calculateTodayCost(totalEnergy);
-            setTodayCost(costToday.toFixed(2));
-
-            const prediction = calculateMonthlyPrediction(totalEnergy, combinedPower);
-            setBillPrediction(prediction);
-          } else {
-            const prediction = calculateMonthlyPrediction(0, combinedPower);
-            setBillPrediction(prediction);
+          // Real-time incremental energy integration:
+          // Even if PZEM takes minutes to increment its 1 Wh counter, integrate wattage in real-time
+          if (combinedPower > 0) {
+            const incrementalKwh = (combinedPower * dtSeconds) / 3600000;
+            accumulatedEnergyRef.current += incrementalKwh;
           }
+
+          const effectiveEnergy = Math.max(hardwareTotalEnergy, accumulatedEnergyRef.current);
+          const formattedKwh = effectiveEnergy.toFixed(3);
+          setLiveEnergy(formattedKwh);
+          localStorage.setItem('enersense_today_kwh', formattedKwh);
+
+          const costToday = calculateTodayCost(effectiveEnergy);
+          setTodayCost(costToday.toFixed(2));
+          localStorage.setItem('enersense_today_cost', costToday.toFixed(2));
+
+          const prediction = calculateMonthlyPrediction(effectiveEnergy, combinedPower);
+          setBillPrediction(prediction);
           
-          // Update appliance wattages
+          // Update appliance wattages WITHOUT overriding isOn states of turned-off appliances
           setAppliances(prev => prev.map(app => {
-            if (app.channel === 1 && data.appliance1 && data.appliance1.power !== undefined) {
-              const w = Math.round(data.appliance1.power);
-              return { ...app, wattage: w, isOn: w > 0 || app.isOn };
+            const chan = app.channel || app.id;
+            if (chan === 1) {
+              const w = Math.round(effectiveApp1Power);
+              return { ...app, wattage: w };
             }
-            if (app.channel === 2 && data.appliance2 && data.appliance2.power !== undefined) {
-              const w = Math.round(data.appliance2.power);
-              return { ...app, wattage: w, isOn: w > 0 || app.isOn };
+            if (chan === 2) {
+              const w = Math.round(effectiveApp2Power);
+              return { ...app, wattage: w };
             }
             return app;
           }));
 
           // Update graph data with all real-time parameters
-          const now = new Date();
-          const timeStr = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+          const dateObj = new Date();
+          const timeStr = `${dateObj.getHours()}:${dateObj.getMinutes().toString().padStart(2, '0')}:${dateObj.getSeconds().toString().padStart(2, '0')}`;
           const newPoint = { 
             time: timeStr, 
             power: Math.round(combinedPower),
             totalPower: Math.round(combinedPower),
-            app1Power: Math.round(app1Power * 10) / 10,
-            app2Power: Math.round(app2Power * 10) / 10,
+            app1Power: Math.round(effectiveApp1Power * 10) / 10,
+            app2Power: Math.round(effectiveApp2Power * 10) / 10,
             voltage: Math.round(voltage * 10) / 10,
             current: parseFloat(totalCurrent.toFixed(3)),
-            app1Current: parseFloat(app1Current.toFixed(3)),
-            app2Current: parseFloat(app2Current.toFixed(3)),
-            energy: parseFloat(totalEnergy.toFixed(3))
+            app1Current: parseFloat(effectiveApp1Current.toFixed(3)),
+            app2Current: parseFloat(effectiveApp2Current.toFixed(3)),
+            energy: parseFloat(formattedKwh)
           };
           
           const newData = [...powerDataRef.current.slice(1), newPoint];
@@ -220,7 +262,7 @@ export const MqttProvider = ({ children }) => {
     mqttClientRef.current = client;
 
     return () => client.end();
-  }, []);
+  }, [swapSensors]);
 
   const toggleAppliance = (id) => {
     setAppliances(prev => prev.map(app => {
@@ -248,9 +290,8 @@ export const MqttProvider = ({ children }) => {
   // Rename appliance & save to PostgreSQL
   const renameAppliance = async (channel, newName, newRoom = 'Living Room') => {
     try {
-      // Optimistic UI update
       setAppliances(prev => prev.map(app => 
-        app.channel === channel ? { ...app, name: newName, room: newRoom } : app
+        (app.channel === channel || app.id === channel) ? { ...app, name: newName, room: newRoom } : app
       ));
 
       const token = localStorage.getItem('enersense_token') || localStorage.getItem('token');
@@ -273,7 +314,7 @@ export const MqttProvider = ({ children }) => {
   const addAppliance = async (newAppData) => {
     try {
       const token = localStorage.getItem('enersense_token') || localStorage.getItem('token');
-      const res = await fetch('${API_BASE_URL}/api/appliances', {
+      const res = await fetch(`${API_BASE_URL}/api/appliances`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -328,7 +369,7 @@ export const MqttProvider = ({ children }) => {
   // Delete appliance
   const deleteAppliance = async (channel) => {
     try {
-      setAppliances(prev => prev.filter(a => a.channel !== channel));
+      setAppliances(prev => prev.filter(a => (a.channel !== channel && a.id !== channel)));
       const token = localStorage.getItem('enersense_token') || localStorage.getItem('token');
       if (token) {
         await fetch(`${API_BASE_URL}/api/appliances/${channel}`, {
@@ -359,7 +400,9 @@ export const MqttProvider = ({ children }) => {
       todayCost,
       billPrediction,
       chatMessages,
-      setChatMessages
+      setChatMessages,
+      swapSensors,
+      toggleSwapSensors
     }}>
       {children}
     </MqttContext.Provider>

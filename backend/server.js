@@ -146,6 +146,9 @@ mqttClient.on('message', (topic, message) => {
   }
 });
 
+let backendIntegratedKwh = 0;
+let lastLogTime = Date.now();
+
 // Save snapshot to database every 30 seconds if live readings exist
 setInterval(async () => {
   if (!latestTelemetry) return;
@@ -154,8 +157,18 @@ setInterval(async () => {
     const p1 = latestTelemetry.appliance1?.power || 0;
     const p2 = latestTelemetry.appliance2?.power || 0;
     const totalPower = p1 + p2;
-    const totalEnergy = (latestTelemetry.appliance1?.energy || 0) + (latestTelemetry.appliance2?.energy || 0);
-    const c1 = latestTelemetry.appliance1?.current || 0;
+    const c1 = (latestTelemetry.appliance1?.current || 0) + (latestTelemetry.appliance2?.current || 0);
+
+    const now = Date.now();
+    const dtSeconds = Math.min((now - lastLogTime) / 1000, 45);
+    lastLogTime = now;
+
+    if (totalPower > 0) {
+      backendIntegratedKwh += (totalPower * dtSeconds) / 3600000;
+    }
+
+    const pzemTotalEnergy = (latestTelemetry.appliance1?.energy || 0) + (latestTelemetry.appliance2?.energy || 0);
+    const effectiveTotalEnergy = Math.max(pzemTotalEnergy, backendIntegratedKwh);
 
     // Only log if voltage > 0 (meaning hardware is actively connected)
     if (v1 > 0) {
@@ -164,7 +177,7 @@ setInterval(async () => {
         await pool.query(`
           INSERT INTO energy_logs (user_id, voltage, current, power, energy_kwh, app1_power, app2_power)
           VALUES ($1, $2, $3, $4, $5, $6, $7)
-        `, [u.id, v1, c1, totalPower, totalEnergy, p1, p2]);
+        `, [u.id, v1, c1, totalPower, effectiveTotalEnergy, p1, p2]);
       }
     }
   } catch (err) {
@@ -531,7 +544,10 @@ app.get('/api/energy/today', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT 
-        COALESCE(MAX(energy_kwh) - MIN(energy_kwh), 0) as today_kwh,
+        GREATEST(
+          COALESCE(MAX(energy_kwh) - MIN(energy_kwh), 0),
+          COALESCE(SUM(power * 30.0 / 3600000.0), 0)
+        ) as today_kwh,
         COALESCE(AVG(power), 0) as avg_power,
         COALESCE(MAX(power), 0) as peak_power,
         COUNT(*) as log_count
@@ -559,7 +575,10 @@ app.get('/api/energy/weekly', authenticateToken, async (req, res) => {
       SELECT 
         TO_CHAR(d.day, 'Dy') as name,
         d.day::date as date,
-        COALESCE(MAX(e.energy_kwh) - MIN(e.energy_kwh), 0) as kwh,
+        GREATEST(
+          COALESCE(MAX(e.energy_kwh) - MIN(e.energy_kwh), 0),
+          COALESCE(SUM(e.power * 30.0 / 3600000.0), 0)
+        ) as kwh,
         COALESCE(AVG(e.power), 0) as avg_watts
       FROM (
         SELECT CURRENT_DATE - i as day 

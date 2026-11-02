@@ -105,7 +105,8 @@ export function calculateProgressiveEnergyCharge(totalKwh) {
  * Computes tiered fixed demand charge based on consumption tier
  */
 export function getFixedChargeForConsumption(monthlyKwh) {
-  if (monthlyKwh <= 100) return 80;
+  if (monthlyKwh <= 100) return 90;
+  if (monthlyKwh <= 300) return 135;
   if (monthlyKwh <= 500) return 135;
   return 160;
 }
@@ -138,17 +139,16 @@ export function calculateMonthlyPrediction(liveEnergyKwh, currentWatts = 0) {
   const kwhToday = parseFloat(liveEnergyKwh) || 0;
   const watts = parseFloat(currentWatts) || 0;
 
-  // Instantaneous run rate (24h continuous draw)
-  const runRateDailyKwh = (watts * 24) / 1000;
+  // Realistic daily projection model:
+  // 1. Standard residential baseline daily consumption (standby, fridge, router): ~1.8 kWh/day
+  const BASELINE_DAILY_KWH = 1.8;
 
-  // Calculate daily projection strictly from actual live sensor readings
-  // If appliances are drawing power, project based on that real wattage; otherwise use actual accumulated kWh
-  let estimatedDailyKwh = 0;
-  if (watts > 0) {
-    estimatedDailyKwh = runRateDailyKwh;
-  } else if (kwhToday > 0) {
-    estimatedDailyKwh = kwhToday;
-  }
+  // 2. Active load contribution modeled with realistic 8 hours/day active usage
+  const activeIncrementalDaily = (watts * 8) / 1000;
+
+  // 3. Combined estimated daily consumption:
+  // Uses actual accumulated kWh today, blended with real-time active load
+  const estimatedDailyKwh = Math.max(kwhToday, BASELINE_DAILY_KWH + activeIncrementalDaily);
 
   // 30-Day Monthly Units Forecast
   const projectedMonthlyKwh = estimatedDailyKwh * 30;
@@ -169,7 +169,7 @@ export function calculateMonthlyPrediction(liveEnergyKwh, currentWatts = 0) {
   const taxableBase = energyCharges + wheelingCharges + fixedCharges;
   const electricityDuty = taxableBase * MAHARASHTRA_TAX_DUTY_PCT;
 
-  // 6. Total Forecasted Bill (includes ₹80 fixed meter fee + usage charges)
+  // 6. Total Forecasted Bill
   const totalPredictedBill = (energyCharges + wheelingCharges + fixedCharges + facCharges + electricityDuty);
 
   // Slab tier determination

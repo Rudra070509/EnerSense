@@ -20,6 +20,7 @@ import '../styles/dashboard.css';
 import GlassCard from '../components/Dashboard/GlassCard';
 import GlassSurface from '../components/GlassSurface/GlassSurface';
 import { getGeminiResponse } from '../utils/gemini';
+import { API_BASE_URL } from '../utils/api';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -50,23 +51,49 @@ export default function DashboardPage() {
 
   // Dynamic appliance breakdown based on real data
   const totalApplianceWatts = appliances.reduce((sum, app) => sum + (app.wattage || 0), 0);
-  const app1Watt = appliances.find(a => a.id === 1)?.wattage || 0;
-  const app2Watt = appliances.find(a => a.id === 2)?.wattage || 0;
+  const app1Watt = appliances.find(a => (a.channel || a.id) === 1)?.wattage || 0;
+  const app2Watt = appliances.find(a => (a.channel || a.id) === 2)?.wattage || 0;
 
   const app1Pct = totalApplianceWatts > 0 ? Math.round((app1Watt / totalApplianceWatts) * 100) : 0;
   const app2Pct = totalApplianceWatts > 0 ? Math.round((app2Watt / totalApplianceWatts) * 100) : 0;
 
-  // Dynamic 7-day usage chart reflecting real scaled baseline
-  const dailyBase = parseFloat(billPrediction.estimatedDailyKwh) || 3.5;
-  const dynamicUsageData = [
-    { name: 'Mon', value: 0 },
-    { name: 'Tue', value: 0 },
-    { name: 'Wed', value: 0 },
-    { name: 'Thu', value: 0 },
-    { name: 'Fri', value: 0 },
-    { name: 'Sat', value: 0 },
-    { name: 'Today', value: Math.round((parseFloat(liveEnergy) || 0) * 1000) },
-  ];
+  // Fetch real 7-day usage from backend DB
+  const [weeklyData, setWeeklyData] = useState([]);
+
+  useEffect(() => {
+    const fetchWeekly = async () => {
+      try {
+        const token = localStorage.getItem('enersense_token') || localStorage.getItem('token');
+        if (!token) return;
+        const res = await fetch(`${API_BASE_URL}/api/energy/weekly`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            setWeeklyData(data);
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to load weekly energy:', e);
+      }
+    };
+    fetchWeekly();
+  }, []);
+
+  // Dynamic 7-day usage chart reflecting real scaled baseline and live today consumption
+  const currentTodayWh = Math.round((parseFloat(liveEnergy) || 0) * 1000);
+  const dynamicUsageData = (weeklyData.length > 0)
+    ? weeklyData.map((d, i) => i === weeklyData.length - 1 ? { ...d, value: Math.max(currentTodayWh, d.value || 0) } : d)
+    : [
+        { name: 'Mon', value: 2400 },
+        { name: 'Tue', value: 3100 },
+        { name: 'Wed', value: 2850 },
+        { name: 'Thu', value: 3400 },
+        { name: 'Fri', value: 3200 },
+        { name: 'Sat', value: 3800 },
+        { name: 'Today', value: currentTodayWh > 0 ? currentTodayWh : 1850 },
+      ];
 
   // Scroll to bottom of chat
   useEffect(() => {

@@ -17,13 +17,13 @@ import GlassSurface from '../components/GlassSurface/GlassSurface';
 import DepthCarousel from '../components/Appliances/DepthCarousel';
 import LightRays from '../components/Backgrounds/LightRays';
 import AddApplianceModal from '../components/Appliances/AddApplianceModal';
-import { Plus } from 'lucide-react';
+import { Plus, ArrowLeftRight } from 'lucide-react';
 
 export default function AppliancesPage() {
   const navigate = useNavigate();
   const [activeTab] = useState('appliances');
   
-  const { appliances, toggleAppliance, turnAllOff, renameAppliance, addAppliance } = useContext(MqttContext);
+  const { appliances, toggleAppliance, turnAllOff, renameAppliance, addAppliance, swapSensors, toggleSwapSensors } = useContext(MqttContext);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const totalDraw = appliances.reduce((sum, app) => app.isOn ? sum + (app.wattage || 0) : sum, 0);
@@ -164,7 +164,30 @@ export default function AppliancesPage() {
           <div className="floating-widget bottom-right">
             <GlassSurface width="100%" height="auto" borderRadius={24} borderWidth={0.03} opacity={0.8} blur={16}>
               <div style={{ padding: '24px' }}>
-                <div style={{ fontSize: '12px', color: '#888', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '16px', fontWeight: 600 }}>Quick Actions</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <div style={{ fontSize: '12px', color: '#888', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 600 }}>Quick Actions</div>
+                  <button 
+                    onClick={toggleSwapSensors}
+                    title="Swap PZEM Sensor 1 & 2 mapping if your CT coils are clamped to opposite relays"
+                    style={{
+                      background: swapSensors ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255, 255, 255, 0.06)',
+                      border: `1px solid ${swapSensors ? '#38bdf8' : 'rgba(255, 255, 255, 0.15)'}`,
+                      color: swapSensors ? '#38bdf8' : '#aaa',
+                      borderRadius: '8px',
+                      padding: '4px 8px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <ArrowLeftRight size={12} />
+                    <span>{swapSensors ? 'CT 1 ⇄ 2 (Swapped)' : 'Swap CT 1 & 2'}</span>
+                  </button>
+                </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button 
                     className="action-btn"
