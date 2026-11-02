@@ -129,48 +129,30 @@ const ensureUserAppliances = async (userId) => {
 // --- Background MQTT Telemetry Ingestion ---
 // Records real-time snapshots into PostgreSQL for active users
 let latestTelemetry = null;
-const mqttClient = mqtt.connect('mqtt://broker.hivemq.com:1883');
-
-mqttClient.on('connect', () => {
-  console.log('Backend connected to MQTT broker (broker.hivemq.com:1883)');
-  mqttClient.subscribe('enersense/telemetry');
-});
-
-mqttClient.on('message', (topic, message) => {
-  if (topic === 'enersense/telemetry') {
-    try {
-      latestTelemetry = JSON.parse(message.toString());
-    } catch (e) {
-      // ignore parse err
-    }
-  }
-});
-
 let backendIntegratedKwh = 0;
 let lastLogTime = Date.now();
+let lastDbLogTime = 0;
 
-// Save snapshot to database every 30 seconds if live readings exist
-setInterval(async () => {
-  if (!latestTelemetry) return;
+const logTelemetryToDb = async (telemetryData) => {
+  if (!telemetryData) return;
   try {
-    const v1 = latestTelemetry.appliance1?.voltage || latestTelemetry.appliance2?.voltage || 0;
-    const p1 = latestTelemetry.appliance1?.power || 0;
-    const p2 = latestTelemetry.appliance2?.power || 0;
+    const v1 = telemetryData.appliance1?.voltage || telemetryData.appliance2?.voltage || 0;
+    const p1 = telemetryData.appliance1?.power || 0;
+    const p2 = telemetryData.appliance2?.power || 0;
     const totalPower = p1 + p2;
-    const c1 = (latestTelemetry.appliance1?.current || 0) + (latestTelemetry.appliance2?.current || 0);
+    const c1 = (telemetryData.appliance1?.current || 0) + (telemetryData.appliance2?.current || 0);
 
     const now = Date.now();
-    const dtSeconds = Math.min((now - lastLogTime) / 1000, 45);
+    const dtSeconds = lastLogTime ? Math.min(Math.max((now - lastLogTime) / 1000, 0.5), 30) : 3;
     lastLogTime = now;
 
     if (totalPower > 0) {
       backendIntegratedKwh += (totalPower * dtSeconds) / 3600000;
     }
 
-    const pzemTotalEnergy = (latestTelemetry.appliance1?.energy || 0) + (latestTelemetry.appliance2?.energy || 0);
+    const pzemTotalEnergy = (telemetryData.appliance1?.energy || 0) + (telemetryData.appliance2?.energy || 0);
     const effectiveTotalEnergy = Math.max(pzemTotalEnergy, backendIntegratedKwh);
 
-    // Only log if voltage > 0 (meaning hardware is actively connected)
     if (v1 > 0) {
       const allUsers = await pool.query('SELECT id FROM users');
       for (const u of allUsers.rows) {
@@ -179,11 +161,50 @@ setInterval(async () => {
           VALUES ($1, $2, $3, $4, $5, $6, $7)
         `, [u.id, v1, c1, totalPower, effectiveTotalEnergy, p1, p2]);
       }
+      lastDbLogTime = now;
+      console.log(`[DB Logged] V: ${v1}V | I: ${c1.toFixed(3)}A | P: ${totalPower}W | E: ${effectiveTotalEnergy.toFixed(4)}kWh`);
     }
   } catch (err) {
-    console.error('Failed to log telemetry snapshot to DB:', err.message);
+    console.error('Failed to log telemetry to DB:', err.message);
   }
-}, 30000);
+};
+
+const mqttClient = mqtt.connect('mqtt://broker.hivemq.com:1883');
+
+mqttClient.on('connect', () => {
+  console.log('Backend connected to MQTT broker (broker.hivemq.com:1883)');
+  mqttClient.subscribe('enersense/telemetry');
+});
+
+mqttClient.on('message', async (topic, message) => {
+  if (topic === 'enersense/telemetry') {
+    try {
+      const data = JSON.parse(message.toString());
+      latestTelemetry = data;
+
+      const p1 = data.appliance1?.power || 0;
+      const p2 = data.appliance2?.power || 0;
+      const totalPower = p1 + p2;
+      const now = Date.now();
+
+      // Whenever active power > 0 is drawn, log to DB at high resolution (every 6 seconds)
+      // so even a short 10-second test is captured immediately!
+      if (totalPower > 0 && (now - lastDbLogTime >= 6000)) {
+        await logTelemetryToDb(data);
+      }
+    } catch (e) {
+      // ignore parse err
+    }
+  }
+});
+
+// Periodic heartbeat: logs at least every 30 seconds if hardware is connected (even if idle)
+setInterval(async () => {
+  const now = Date.now();
+  if (latestTelemetry && (now - lastDbLogTime >= 30000)) {
+    await logTelemetryToDb(latestTelemetry);
+  }
+}, 10000);
 
 // --- Auth Middleware ---
 const authenticateToken = (req, res, next) => {
